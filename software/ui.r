@@ -8,6 +8,7 @@ if (length(to_install) > 0) {
 }
 
 #packages
+library(conflicted)
 library(shiny)
 library(shinyTime)
 library(shinydashboard)
@@ -18,11 +19,8 @@ library(DT)
 library(shinyFiles)
 library(fontawesome)
 library(readODS)
-library(shiny)
-library(shinyTime)
-library(readODS)
 library(gridExtra)
-
+conflicts_prefer(DT::dataTableOutput)
 
 options(shiny.maxRequestSize = 1000 * 1024 ^ 2)
 options(shiny.usecairo = FALSE) #R4.2.0
@@ -84,7 +82,7 @@ sidebard <- dashboardSidebar(
     ),
     br(),    br(),
     tags$div(HTML("<h5>
-                  V2023-06
+                  V2024-08
                   </h5>"))
     )
     )
@@ -120,7 +118,7 @@ body <- dashboardBody(withMathJax(),
        tabItem(
          tabName = 'etape1',
         h2(strong("Étape1")),
-         box(width = NULL,
+        shinydashboard::box(width = NULL,
              background = "black",
              height = 2),
          br()
@@ -131,10 +129,10 @@ body <- dashboardBody(withMathJax(),
       tabItem(
         tabName = 'etape2',
         h2(strong("PressureSensorCalibration")),
-        box(width = NULL,
+        shinydashboard::box(width = NULL,
             background = "black",
             height = 2),
-              box(
+        shinydashboard::box(
                 solidHeader = TRUE,
                 width = NULL,
                 bstatut = "danger" ,
@@ -169,15 +167,15 @@ body <- dashboardBody(withMathJax(),
                                       id = "loadmessage")
                                  )),
                 
-                mainPanel(br(),div(dataTableOutput("table"), style = "font-size:70%"),
-                          br(),div(dataTableOutput("pente"), style = "font-size:70%"),
+                mainPanel(br(),div(DT::dataTableOutput("table"), style = "font-size:70%"),
+                          br(),div(DT::dataTableOutput("pente"), style = "font-size:70%"),
                         
                           br(),mainPanel(
                                   fluidRow(
                                     splitLayout(cellWidths = c("50%", "50%"), plotOutput("hist1"), plotOutput("hist2"))
                                   )),
                         br(),
-                   div(dataTableOutput("arduino"), style = "font-size:70%"),
+                   div(DT::dataTableOutput("arduino"), style = "font-size:70%"),
                         
                    br(),downloadButton("downloadData", "Téléchargez le résultat")
                           )
@@ -189,11 +187,11 @@ body <- dashboardBody(withMathJax(),
       tabItem(
         tabName = 'etape2i',
         h2(strong("PressureSensorCalibration(lecture)")),
-        box(width = NULL,
+        shinydashboard::box(width = NULL,
             background = "black",
             height = 2),
         br(),
-          box(
+        shinydashboard::box(
             solidHeader = TRUE,
             width = NULL,
             bstatut = "danger" ,
@@ -214,14 +212,14 @@ body <- dashboardBody(withMathJax(),
                              "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4")
               ),
             
-            mainPanel(br(),div(dataTableOutput("tableL"), style = "font-size:70%"),
-                      br(),div(dataTableOutput("penteL"), style = "font-size:70%"),
+            mainPanel(br(),div(DT::dataTableOutput("tableL"), style = "font-size:70%"),
+                      br(),div(DT::dataTableOutput("penteL"), style = "font-size:70%"),
                       br(),mainPanel(
                         fluidRow(
                           splitLayout(cellWidths = c("50%", "50%"), plotOutput("hist1L"), plotOutput("hist2L"))
                         )),
                       br(),
-                      div(dataTableOutput("arduinoL"), style = "font-size:70%")
+                      div(DT::dataTableOutput("arduinoL"), style = "font-size:70%")
             )
           ) #box
       ), #tabItem etape2i
@@ -231,11 +229,11 @@ body <- dashboardBody(withMathJax(),
       tabItem(
         tabName = 'etape3',
         h2(strong("SingleKmeasurement")),
-        box(width = NULL,
+        shinydashboard::box(width = NULL,
             background = "black",
             height = 1),
         br(),
-        box(
+        shinydashboard::box(
           solidHeader = TRUE,
           width = NULL,
           bstatut = "danger" ,
@@ -258,18 +256,30 @@ body <- dashboardBody(withMathJax(),
                       column(2, div(textInput(inputId = "T1_oC", label = "T1 (oC):"), style = "font-size:70%")),
                       column(2, div(textInput(inputId = "T2_oC", label = "T2 (oC):"), style = "font-size:70%"))),
                     fluidRow(
-                      column(2, selectInput('parm1', label = 'expérience (dossier):', c("EA2_E1V1"="EA2_E1V1",
-                                                                                        "INFILTRATION"="INFILTRATION",
-                                                                                        "DESPA"="DESPA"), width="200px"), style = "font-size:70%"),
+                      #column(2, selectInput('parm1', label = 'expérience (dossier):', c("EA2_E1V2"="EA2_E1V2",
+                      #                                                                  "INFILTRATION"="INFILTRATION",
+                      #                                                                  "DESPA"="DESPA",
+                      #                                                                  "kmax_colo"="kmax_colo",
+                      #                                                                  "exp_Morgan"="exp_Morgan"), width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm1', label = 'expérience (dossier):', choices = 'Pas encore de choix', width="200px"), style = "font-size:70%"),
+                      
                       #column(2, div(textInput(inputId = "parm1", label = "expérience (dossier):"), style = "font-size:70%")),
-                      column(2, selectInput('parm2', label = 'nom du mesureur:', c("KG"="KG",
-                                                                                   "KTH"="KTH",
-                                                                                   "MC"="MC",
-                                                                                   "ID"="ID",
-                                                                                   "AU"="AU"), width="200px"), style = "font-size:70%"),
+                      #column(2, selectInput('parm2', label = 'nom du mesureur:', c("KG"="KG",
+                      #                                                             "KTH"="KTH",
+                      #                                                             "MC"="MC",
+                      #                                                             "ID"="ID",
+                      #                                                             "ND"="ND",
+                      #                                                             "HM"="HM"
+                      #                                                          ), width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm2', label = 'nom du mesureur:', choices = 'Pas encore de choix', width="200px"), style = "font-size:70%"),
+                      
                       #column(2, div(textInput(inputId = "parm2", label = "nom du mesureur:"), style = "font-size:70%")),
-                      column(2, selectInput('parm3', label = 'espèce:', c("KI"="KI",
-                                                                          "KMAX"="KMAX"), width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm3', label = 'parm3:', choices = 'Pas encore de choix', width="200px"), style = "font-size:70%"),
+                      #column(2, selectInput('parm3i', label = 'parm3i:', c("ki-colo"="ki-colo",
+                      #                                                   "ki-kmaxdessicateur-colo"="ki-kmaxdessicateur-colo",
+                      #                                                   "ki-kmaxseringue-colo"="ki-kmaxseringue-colo"), width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm3i', label = 'parm3i:', choices = 'Pas encore de choix', width="200px"), style = "font-size:70%"),
+                      
                       #column(2, div(textInput(inputId = "parm3", label = "espèce:"), style = "font-size:70%")),
                       column(2, div(textInput(inputId = "parm4", label = "identifiant de l'échantillon:"), style = "font-size:70%")),
                       column(2, div(textInput(inputId = "parm5", label = "identifiant de la mesure:"), style = "font-size:70%")),
@@ -300,21 +310,23 @@ body <- dashboardBody(withMathJax(),
                                 id = "loadmessage")
                            )),
           mainPanel(
-                    #div(dataTableOutput("tablem"), style = "font-size:70%", width = 6),
-                    div(dataTableOutput("table4m"), style = "font-size:70%", width = 6),
+                    #div(DT::dataTableOutput("tablem"), style = "font-size:70%", width = 6),
+                    div(DT::dataTableOutput("table4m1"), style = "font-size:70%", width = 6),
+                    div(DT::dataTableOutput("table4m2"), style = "font-size:70%", width = 6),
                     br(),
-                    div(dataTableOutput("arduinom"), style = "font-size:70%", width = 6),
+                    div(DT::dataTableOutput("arduinom"), style = "font-size:70%", width = 6),
                     br(),
-                    div(dataTableOutput("table1m"), style = "font-size:70%", width = 6),
+                    div(DT::dataTableOutput("table1m"), style = "font-size:70%", width = 6),
                     br(),
-                    div(dataTableOutput("table2m"), style = "font-size:70%", width = 6),
+                    div(DT::dataTableOutput("table2m"), style = "font-size:70%", width = 6),
                     br(),
-                    div(dataTableOutput("table3m"), style = "font-size:70%", width = 6),
+                    div(DT::dataTableOutput("table3m"), style = "font-size:70%", width = 6),
                     br(),
                     div(plotOutput("scatter"), style = "font-size:70%", width = 6),
-                    div(plotOutput("scatter_step2"), style = "font-size:70%", width = 6),
-                    div(plotOutput("scatter2"), style = "font-size:70%", width = 6),
+                    #div(plotOutput("scatter_step2"), style = "font-size:70%", width = 6),
+                    #div(plotOutput("scatter2"), style = "font-size:70%", width = 6),
                     div(plotOutput("scatter_step3"), style = "font-size:70%", width = 6),
+                    div(plotOutput("scatter_step3i"), style = "font-size:70%", width = 6),
                     downloadButton("downloadDatam", "Téléchargez le résultat")
           )
             
@@ -326,11 +338,11 @@ body <- dashboardBody(withMathJax(),
 tabItem(
   tabName = 'etape3i',
   h2(strong("SingleKmeasurement(lecture)")),
-  box(width = NULL,
+  shinydashboard::box(width = NULL,
       background = "black",
       height = 2),
   br(),
-  box(
+  shinydashboard::box(
     solidHeader = TRUE,
     width = NULL,
     bstatut = "danger" ,
@@ -360,22 +372,24 @@ tabItem(
     ),
     
     mainPanel(
-      div(dataTableOutput("intrantL1"), style = "font-size:70%", width = 6),
+      div(DT::dataTableOutput("intrantL1"), style = "font-size:70%", width = 6),
       br(),
-      div(dataTableOutput("table4mL"), style = "font-size:70%", width = 6),
+      div(DT::dataTableOutput("table4mL1"), style = "font-size:70%", width = 6),
+      div(DT::dataTableOutput("table4mL2"), style = "font-size:70%", width = 6),
       br(),
-      div(dataTableOutput("arduinomL"), style = "font-size:70%", width = 6),
+      div(DT::dataTableOutput("arduinomL"), style = "font-size:70%", width = 6),
       br(),
-      div(dataTableOutput("table1mL"), style = "font-size:70%", width = 6),
+      div(DT::dataTableOutput("table1mL"), style = "font-size:70%", width = 6),
       br(),
-      div(dataTableOutput("table2mL"), style = "font-size:70%", width = 6),
+      div(DT::dataTableOutput("table2mL"), style = "font-size:70%", width = 6),
       br(),
-      div(dataTableOutput("table3mL"), style = "font-size:70%", width = 6),
+      div(DT::dataTableOutput("table3mL"), style = "font-size:70%", width = 6),
       br(),
       div(plotOutput("scatterL"), style = "font-size:70%", width = 6),
-      div(plotOutput("scatterL_step2"), style = "font-size:70%", width = 6),
-      div(plotOutput("scatter2L"), style = "font-size:70%", width = 6),
-      div(plotOutput("scatterL_step3"), style = "font-size:70%", width = 6)
+      #div(plotOutput("scatterL_step2"), style = "font-size:70%", width = 6),
+      #div(plotOutput("scatter2L"), style = "font-size:70%", width = 6),
+      div(plotOutput("scatterL_step3"), style = "font-size:70%", width = 6),
+      div(plotOutput("scatterL_step3i"), style = "font-size:70%", width = 6),
       #downloadButton("downloadDatamL", "Téléchargez le résultat")
     )
   ) #box
@@ -386,11 +400,11 @@ tabItem(
       tabItem(
         tabName = 'etape4',
         h2(strong("Lecture des fichiers SingleKmeasurement")),
-        box(width = NULL,
+        shinydashboard::box(width = NULL,
             background = "black",
             height = 2),
         br(),
-        box(
+        shinydashboard::box(
           solidHeader = TRUE,
           width = NULL,
           bstatut = "danger" ,
@@ -416,7 +430,7 @@ tabItem(
       tabItem(
         tabName = 'info',
         h2(strong("INFORMATIONS")),
-        box(width = NULL,
+        shinydashboard::box(width = NULL,
             background = "black",
             height = 2),
         br()
