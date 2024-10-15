@@ -1,4 +1,4 @@
-#installation des packages
+#installation of packages
 all_pkgs <-  c("gridExtra","htmltools","zip","stringr","plyr", "zoo", "shiny",   "shinyTime", "shinydashboard", "readODS", "data.table", "shinyjs", "tidyverse", "DT", "shinyFiles", "readODS")
 
 already_installed <- rownames(installed.packages())
@@ -35,33 +35,33 @@ header <-
 sidebard <- dashboardSidebar(
   sidebarMenu(
     menuItem(
-      'PEEKtubeCalibration', 
-      tabName = 'etape1', 
+      'Peek-tube calibration', 
+      tabName = 'step1', 
       icon = icon("thermometer")
     ),
     menuItem(
-      "PressureSensorCalibration",
-      tabName = 'etape2',
+      "Pressure sensor calibration",
+      tabName = 'step2',
       icon = icon("cog")
     ),
     menuItem(
-      "PressureSensorCalibration(lecture)",
-      tabName = 'etape2i',
+      "Pressure sensor calibration (reading)",
+      tabName = 'step2i',
       icon = icon("cogs")
     ),
     menuItem(
-      "SingleKmeasurement",
-      tabName = "etape3",
+      "Measurement",
+      tabName = "step3",
       icon = icon("object-ungroup")
     ),
     menuItem(
-      "SingleKmeasurement(lecture)",
-      tabName = "etape3i",
+      "Measurement (reading)",
+      tabName = "step3i",
       icon = icon("object-group")
     ),
     menuItem(
-      "ODS",
-      tabName = "etape4",
+      "Data compilation",
+      tabName = "step4",
       icon = icon("tasks")
     ),
     menuItem(
@@ -77,12 +77,12 @@ sidebard <- dashboardSidebar(
       icon("times"),
       onclick = "setTimeout(function(){window.close();},500);",
       # close browser
-      "Fermer l'application",
+      "Close the application",
       style ="float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4"
     ),
     br(),    br(),
     tags$div(HTML("<h5>
-                  V2024-08
+                  V2024-10
                   </h5>"))
     )
     )
@@ -113,22 +113,22 @@ body <- dashboardBody(withMathJax(),
                         ),
 
      tabItems(
-# etape1 ------------------------------------------------------------------
+# step1 ------------------------------------------------------------------
        #############################
        tabItem(
-         tabName = 'etape1',
-        h2(strong("Étape1")),
+         tabName = 'step1',
+        h2(strong("Peek-tube calibration")),
         shinydashboard::box(width = NULL,
              background = "black",
              height = 2),
          br()
-      ), #tabItem etape1
+      ), #tabItem step1
 
-# etape2 ------------------------------------------------------------------
+# step2 ------------------------------------------------------------------
       #############################
       tabItem(
-        tabName = 'etape2',
-        h2(strong("PressureSensorCalibration")),
+        tabName = 'step2',
+        h2(strong("Pressure sensor calibration")),
         shinydashboard::box(width = NULL,
             background = "black",
             height = 2),
@@ -142,28 +142,28 @@ body <- dashboardBody(withMathJax(),
                   shinyjs::useShinyjs(),
                   div(id = "myapp",
                   div(dateInput(inputId = "date", label = "Date:", value = NULL), style = "font-size:70%"),
-                  div(timeInput(inputId = "heure", label = "Heure:", value = Sys.time(),seconds = F), style = "font-size:70%"),
-                  div(textInput(inputId = "operateur", label = "Opérateur:"), style = "font-size:70%"),
-                  div(textInput(inputId = "xylem", label = "Xylem:"), style = "font-size:70%"),
-                  #div(numericInput(inputId="hauteur", label="Hauteur (cm):", 5, min = 5, max = 100, step=5), style = "font-size:70%"),
-                  div(textInput("breaks", "Hauteurs (cm, séparées par une virgule,\n ex: 5,10,15,20,25,30,35,40,45,50): ", placeholder = "Entrer les hauteurs..."), style = "font-size:70%"),
-                  div(textAreaInput("pasted", "Copier les données ici:"), style = "font-size:70%"),
+                  div(timeInput(inputId = "time", label = "Time:", value = Sys.time(),seconds = F), style = "font-size:70%"),
+                  div(textInput(inputId = "operator", label = "Operator:"), style = "font-size:70%"),
+                  div(textInput(inputId = "device", label = "Device:"), style = "font-size:70%"),
+                  #div(numericInput(inputId="height", label="Height (cm):", 5, min = 5, max = 100, step=5), style = "font-size:70%"),
+                  div(textInput("breaks", "Heights (cm, separated by a comma,\n ex: 5,10,15,20,25,30,35,40,45,50): ", placeholder = "Enter the heights..."), style = "font-size:70%"),
+                  div(textAreaInput("pasted", "Paste data here:"), style = "font-size:70%"),
                   tags$script("
                 Shiny.addCustomMessageHandler('resetValue', function(variableName) {
                 Shiny.onInputChange(variableName, null);});
                 ")
                   ),
                   br(),
-                  actionButton("recalc", "Soumettre", icon("paper-plane"), style =
+                  actionButton("recalc", "Submit", icon("paper-plane"), style =
                                  "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4"),
 
-                  actionButton("resetAll", "Réinitialiser")
+                  actionButton("resetAll", "Reset")
                 ),
                 
                 conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                                  tags$div(
                                    img(src = "sablier.gif", height = "40"),
-                                   h1(strong("Cela peut prendre un certain temps..."),
+                                   h1(strong("This might take a while..."),
                                       id = "loadmessage")
                                  )),
                 
@@ -177,16 +177,16 @@ body <- dashboardBody(withMathJax(),
                         br(),
                    div(DT::dataTableOutput("arduino"), style = "font-size:70%"),
                         
-                   br(),downloadButton("downloadData", "Téléchargez le résultat")
+                   br(),downloadButton("downloadData", "Download the results")
                           )
               ) #box
-       ), #tabItem etape2
+       ), #tabItem step2
       
-# etape2 lecture ------------------------------------------------------------------
+# step2 reading ------------------------------------------------------------------
       #############################
       tabItem(
-        tabName = 'etape2i',
-        h2(strong("PressureSensorCalibration(lecture)")),
+        tabName = 'step2i',
+        h2(strong("Pressure sensor calibration (reading)")),
         shinydashboard::box(width = NULL,
             background = "black",
             height = 2),
@@ -198,17 +198,17 @@ body <- dashboardBody(withMathJax(),
             
             column(
               width = 3,
-              p("Les Fichiers de la calibration sont dans le dossier: xylem\\Shiny\\OUTPUTS\\CALIBRATION"),
+              p("Calibration files are in the folder: flowmeter\\Shiny\\OUTPUTS\\CALIBRATION"),
               shinyjs::useShinyjs(),
               div(id = "myapp",
-                  shinyFilesButton('folder', 'Sélectionner un fichier de calibration', 'Sélectionner un fichier de calibration', FALSE)#,
+                  shinyFilesButton('folder', 'Select a calibration file', 'Select a calibration file', FALSE)#,
                   #div(dateInput(inputId = "dateL", label = "Date:", value = NULL), style = "font-size:70%"),
-                  #div(timeInput(inputId = "heureL", label = "Heure:", value = Sys.time(),seconds = F), style = "font-size:70%"),
-                  #div(textInput(inputId = "operateurL", label = "Opérateur:"), style = "font-size:70%"),
-                  #div(textInput(inputId = "xylemL", label = "Xylem:"), style = "font-size:70%")
+                  #div(timeInput(inputId = "timeL", label = "Time:", value = Sys.time(),seconds = F), style = "font-size:70%"),
+                  #div(textInput(inputId = "operatorL", label = "Operator:"), style = "font-size:70%"),
+                  #div(textInput(inputId = "deviceL", label = "Device:"), style = "font-size:70%")
               ),
               br(),
-              actionButton("recalcL", "Soumettre", icon("paper-plane"), style =
+              actionButton("recalcL", "Submit", icon("paper-plane"), style =
                              "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4")
               ),
             
@@ -222,13 +222,13 @@ body <- dashboardBody(withMathJax(),
                       div(DT::dataTableOutput("arduinoL"), style = "font-size:70%")
             )
           ) #box
-      ), #tabItem etape2i
+      ), #tabItem step2i
       
-# etape3 ------------------------------------------------------------------
+# step3 ------------------------------------------------------------------
       #############################
       tabItem(
-        tabName = 'etape3',
-        h2(strong("SingleKmeasurement")),
+        tabName = 'step3',
+        h2(strong("Measurement")),
         shinydashboard::box(width = NULL,
             background = "black",
             height = 1),
@@ -243,50 +243,28 @@ body <- dashboardBody(withMathJax(),
             div(id = "myappm",
                # mainPanel(#"main panel",
                   fluidRow(
-                    p("Les Fichiers sont dans le dossier: xylem\\Shiny\\OUTPUTS\\SINGLE\\projet\\appareil"),
+                    p("Files are in the folder: flowmeter\\Shiny\\OUTPUTS\\SINGLE\\project\\device"),
                     splitLayout(cellWidths = c("50%", "50%"), 
-                                {div(shinyFilesButton('folderPTm', 'Sélectionner un fichier de PEEKtubeCalibration', 'Sélectionner un fichier de PEEKtubeCalibration', FALSE))
+                                {div(shinyFilesButton('folderPTm', 'Select a Peek-tube calibration file', 'Select a Peek-tube calibration file', FALSE))
                                 }, 
-                                {div(shinyFilesButton('folderPSm', 'Sélectionner un fichier de Preasure Sersors Calibration', 'Sélectionner un fichier de Preasure Sersors Calibration', FALSE))
+                                {div(shinyFilesButton('folderPSm', 'Select a Pressure Sensors Calibration file', 'Select a Pressure Sensors Calibration file', FALSE))
                                 } ),
 
                     fluidRow(
-                      column(2, selectInput('peek_sel', label = 'Couleur', choices = 'Pas encore de choix', width="200px")),
-                      column(2, div(textInput(inputId = "parm7", label = "Appareil:"), style = "font-size:70%")),
+                      column(2, selectInput('peek_sel', label = 'Peek-tube ID', choices = 'No choices yet', width="200px")),
+                      column(2, div(textInput(inputId = "parm7", label = "Device:"), style = "font-size:70%")),
                       column(2, div(textInput(inputId = "T1_oC", label = "T1 (oC):"), style = "font-size:70%")),
                       column(2, div(textInput(inputId = "T2_oC", label = "T2 (oC):"), style = "font-size:70%"))),
                     fluidRow(
-                      #column(2, selectInput('parm1', label = 'expérience (dossier):', c("EA2_E1V2"="EA2_E1V2",
-                      #                                                                  "INFILTRATION"="INFILTRATION",
-                      #                                                                  "DESPA"="DESPA",
-                      #                                                                  "kmax_colo"="kmax_colo",
-                      #                                                                  "exp_Morgan"="exp_Morgan"), width="200px"), style = "font-size:70%"),
-                      column(2, selectInput('parm1', label = 'expérience (dossier):', choices = 'Pas encore de choix', width="200px"), style = "font-size:70%"),
-                      
-                      #column(2, div(textInput(inputId = "parm1", label = "expérience (dossier):"), style = "font-size:70%")),
-                      #column(2, selectInput('parm2', label = 'nom du mesureur:', c("KG"="KG",
-                      #                                                             "KTH"="KTH",
-                      #                                                             "MC"="MC",
-                      #                                                             "ID"="ID",
-                      #                                                             "ND"="ND",
-                      #                                                             "HM"="HM"
-                      #                                                          ), width="200px"), style = "font-size:70%"),
-                      column(2, selectInput('parm2', label = 'nom du mesureur:', choices = 'Pas encore de choix', width="200px"), style = "font-size:70%"),
-                      
-                      #column(2, div(textInput(inputId = "parm2", label = "nom du mesureur:"), style = "font-size:70%")),
-                      column(2, selectInput('parm3', label = 'parm3:', choices = 'Pas encore de choix', width="200px"), style = "font-size:70%"),
-                      #column(2, selectInput('parm3i', label = 'parm3i:', c("ki-colo"="ki-colo",
-                      #                                                   "ki-kmaxdessicateur-colo"="ki-kmaxdessicateur-colo",
-                      #                                                   "ki-kmaxseringue-colo"="ki-kmaxseringue-colo"), width="200px"), style = "font-size:70%"),
-                      column(2, selectInput('parm3i', label = 'parm3i:', choices = 'Pas encore de choix', width="200px"), style = "font-size:70%"),
-                      
-                      #column(2, div(textInput(inputId = "parm3", label = "espèce:"), style = "font-size:70%")),
-                      column(2, div(textInput(inputId = "parm4", label = "identifiant de l'échantillon:"), style = "font-size:70%")),
-                      column(2, div(textInput(inputId = "parm5", label = "identifiant de la mesure:"), style = "font-size:70%")),
-                      column(2, div(dateInput(inputId = "parm6", label = "date:", value = Sys.time()), style = "font-size:70%"))),
-                #fileInput('myfileinput', label = 'Select File', accept = c(".csv")),
-                div(textAreaInput("pastedm", "Copier les données ici:"), style = "font-size:70%",height = '50%'),
-                div(textAreaInput("commentairem", "Commentaires:"), style = "font-size:70%"),
+                      column(2, selectInput('parm1', label = 'Experiment (file):', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm2', label = 'Name of the operator:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm3', label = 'Parameter3:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm3i', label = 'Parameter3i:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
+                      column(2, div(textInput(inputId = "parm4", label = "Sample ID:"), style = "font-size:70%")),
+                      column(2, div(textInput(inputId = "parm5", label = "Measurement ID:"), style = "font-size:70%")),
+                      column(2, div(dateInput(inputId = "parm6", label = "Date:", value = Sys.time()), style = "font-size:70%"))),
+                div(textAreaInput("pastedm", "Paste data here:"), style = "font-size:70%",height = '50%'),
+                div(textAreaInput("commentairem", "Comments:"), style = "font-size:70%"),
                 splitLayout(cellWidths = c("15%", "15%", "15%"), 
                             {div(numericInput(inputId="Stemdiameter1", label="Stem diameter 1 (mm):", value=NA, min = 0, max = 100), style = "font-size:70%")
                             }, 
@@ -298,15 +276,15 @@ body <- dashboardBody(withMathJax(),
                 )#)
             ), 
             #br(),
-            actionButton("recalcm", "Soumettre", icon("paper-plane"), style =
+            actionButton("recalcm", "Submit", icon("paper-plane"), style =
                            "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4"),
             
-            actionButton("resetAllm", "Réinitialiser")
+            actionButton("resetAllm", "Reset")
           ),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(
                              img(src = "sablier.gif", height = "40"),
-                             h1(strong("Cela peut prendre un certain temps..."),
+                             h1(strong("This might take a while..."),
                                 id = "loadmessage")
                            )),
           mainPanel(
@@ -327,17 +305,17 @@ body <- dashboardBody(withMathJax(),
                     #div(plotOutput("scatter2"), style = "font-size:70%", width = 6),
                     div(plotOutput("scatter_step3"), style = "font-size:70%", width = 6),
                     div(plotOutput("scatter_step3i"), style = "font-size:70%", width = 6),
-                    downloadButton("downloadDatam", "Téléchargez le résultat")
+                    downloadButton("downloadDatam", "Download the results")
           )
             
         ) #box
-      ), #tabItem etape3
+      ), #tabItem step3
 
-# etape3 lecture ------------------------------------------------------------------
+# step3 reading ------------------------------------------------------------------
 #############################
 tabItem(
-  tabName = 'etape3i',
-  h2(strong("SingleKmeasurement(lecture)")),
+  tabName = 'step3i',
+  h2(strong("Measurement (reading)")),
   shinydashboard::box(width = NULL,
       background = "black",
       height = 2),
@@ -349,26 +327,26 @@ tabItem(
     
     column(
       width = 3,
-      p("Les Fichiers sont dans le dossier: xylem\\Shiny\\OUTPUTS\\SINGLE"),
+      p("Files are in the folder: flowmeter\\Shiny\\OUTPUTS\\SINGLE"),
       shinyjs::useShinyjs(),
       div(id = "myapp3i",
-          shinyFilesButton('folder3i', 'Sélectionner un fichier de mesure', 'Sélectionner un fichier de mesure', FALSE)#,
+          shinyFilesButton('folder3i', 'Select a measurement file', 'Select a measurement file', FALSE)#,
           #div(dateInput(inputId = "dateL", label = "Date:", value = NULL), style = "font-size:70%"),
-          #div(timeInput(inputId = "heureL", label = "Heure:", value = Sys.time(),seconds = F), style = "font-size:70%"),
-          #div(textInput(inputId = "operateurL", label = "Opérateur:"), style = "font-size:70%"),
-          #div(textInput(inputId = "xylemL", label = "Xylem:"), style = "font-size:70%")
+          #div(timeInput(inputId = "timeL", label = "Time:", value = Sys.time(),seconds = F), style = "font-size:70%"),
+          #div(textInput(inputId = "operatorrL", label = "Operator:"), style = "font-size:70%"),
+          #div(textInput(inputId = "deviceL", label = "Device:"), style = "font-size:70%")
       ),
       br(),
-      actionButton("recalcL3i", "Soumettre", icon("paper-plane"), style =
+      actionButton("recalcL3i", "Submit", icon("paper-plane"), style =
                      "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4"),
       
       #shinyjs::useShinyjs(),
       #shinyjs::extendShinyjs(text = "shinyjs.refresh = function() { location.reload(); }"),
-      actionButton("refresh", "Réinitialiser"),
+      actionButton("refresh", "Reset"),
       br(),
       br(),
-      p("Ouvrir le fichier, faire la modification des paramètres et cliquer sur Renommer les fichiers"),
-      actionButton("renamedata", "Renommer les fichiers")
+      p("Open the file, modify the parameters and click Rename files"),
+      actionButton("renamedata", "Rename files")
     ),
     
     mainPanel(
@@ -390,16 +368,16 @@ tabItem(
       #div(plotOutput("scatter2L"), style = "font-size:70%", width = 6),
       div(plotOutput("scatterL_step3"), style = "font-size:70%", width = 6),
       div(plotOutput("scatterL_step3i"), style = "font-size:70%", width = 6),
-      #downloadButton("downloadDatamL", "Téléchargez le résultat")
+      #downloadButton("downloadDatamL", "Download the results")
     )
   ) #box
-), #tabItem etape3i
+), #tabItem step3i
       
-# etape4 ------------------------------------------------------------------
+# step4 ------------------------------------------------------------------
       #############################
       tabItem(
-        tabName = 'etape4',
-        h2(strong("Lecture des fichiers SingleKmeasurement")),
+        tabName = 'step4',
+        h2(strong("Reading Measurement files")),
         shinydashboard::box(width = NULL,
             background = "black",
             height = 2),
@@ -410,20 +388,15 @@ tabItem(
           bstatut = "danger" ,
            column(
             width = 3,
-            #p("Répertoire qui contient tout les sous-dossiers avec les fichiers SingleKmeasurement: (ex: xylem app/xylem/Shiny/OUTPUTS/SINGLE)"),
-            #shinyjs::useShinyjs(),
-            #div(id = "myapp4",
-            #  shinyDirButton('folder4', 'Sélectionner le dossier de mesure', 'Sélectionner le dossier de mesure', FALSE)
-            #),
-            textInput(inputId = "DIR", label = "Répertoire qui contient les fichiers SingleKmeasurement: (ex: OUTPUTS/SINGLE)"),
+            textInput(inputId = "DIR", label = "Directory containing Measurement files: (e.g., OUTPUTS/SINGLE)"),
             br(),                                                                         
-            actionButton("recalc4", "Soumettre", icon("paper-plane"), style =
+            actionButton("recalc4", "Submit", icon("paper-plane"), style =
                            "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4")
           ),
           
           mainPanel(textOutput("text"))
           ) #box
-      ), #tabItem etape4
+      ), #tabItem step4
       
 # info ------------------------------------------------------------------
       #############################
@@ -441,7 +414,7 @@ tabItem(
 
 # App ---------------------------------------------------------------------
 dashboardPage(header,
-              title = "XYLEM",
+              title = "FLOWMETER",
               #dashboardSidebar(disable = TRUE),
               sidebard,
               skin = "blue",

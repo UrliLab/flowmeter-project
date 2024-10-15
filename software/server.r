@@ -1,14 +1,14 @@
-#fonction pour separer les hauteurs
+#function for height separation
 extract <- function(text) {
   text <- gsub(" ", "", text)
   split <- strsplit(text, ",", fixed = FALSE)[[1]]
   as.numeric(split)
 }
-#fonction pour enlever des donnees
+#function for data removal
 getRemoveButton <- function(n, idS = "", lab = "Pit") {
   if (stringr::str_length(idS) > 0) idS <- paste0(idS, "-")
   ret <- shinyInput(actionButton, n,
-                    'button_', label = "Enlever",
+                    'button_', label = "Remove",
                     onclick = sprintf('Shiny.onInputChange(\"%sremove_button_%s\",  this.id)' ,idS, lab))
   return (ret)
 }
@@ -18,7 +18,7 @@ shinyInput <- function(FUN, n, id, ses, ...) {
   as.character(FUN(paste0(id, n), ...))
 }
 
-# Creation des repertoires du projet
+# Creation of project directories
 if (file.exists("OUTPUTS")) {
 } else {
   dir.create("OUTPUTS")
@@ -33,34 +33,34 @@ if (file.exists("OUTPUTS/SINGLE")) {
 }
 
 
-#debut de l application
+#start of the application
 server <- function(input, output, session) {
 ############################################################
 ############################################################
-#ETAPE 1 PEEKtubeCalibration
+#STEP 1 Peek-tube calibration
  #pas encore integre  
   
 ############################################################
 ############################################################
-#ETAPE 2 PressureSensorCalibration  
+#STEP 2 Pressure sensor calibration  
   #Initial Dataframe 
   rv <- reactiveValues(
-  Testdata =data.frame("Hauteur" = integer(),	"ELTime" = integer(),	"Step"=integer(),	
+  Testdata =data.frame("Height" = integer(),	"ELTime" = integer(),	"Step"=integer(),	
                          "P1.psi"=integer(),	"P2.psi"=integer(),
                          #"T1_oC"=numeric(),	"T2_oC"=numeric(),	
-                       "T3_oC"=numeric(), "id"=character(), "Enlever"=character()
+                       "T3_oC"=numeric(), "id"=character(), "Remove"=character()
                        ))
   rv2 <- reactiveValues(
-    data_mean =data.frame("Hauteur" = integer(),	"n" = integer(),		
+    data_mean =data.frame("Height" = integer(),	"n" = integer(),		
                          "P1_mean"=numeric(),	"P1_sd"=numeric(), "P1_cv"=numeric(),
                          "P2_mean"=numeric(),	"P2_sd"=numeric(), "P2_cv"=numeric(),	
                          "Bar"=numeric()),
-    pente=data.frame("Variable"=character(),"P1"=numeric(),"P2"=numeric()))
+    slope=data.frame("Variable"=character(),"P1"=numeric(),"P2"=numeric()))
 
   observeEvent(input$recalc,{
-      Hauteur <- extract(input$breaks)
-      Step <- 1:length(Hauteur)
-      iter <- cbind(Step,Hauteur)
+      Height <- extract(input$breaks)
+      Step <- 1:length(Height)
+      iter <- cbind(Step,Height)
 
     if (input$pasted != '') {
       df_table <- fread(paste(input$pasted, collapse = "\n"))
@@ -69,54 +69,54 @@ server <- function(input, output, session) {
                               "T3_oC")
       df_table$Step<-df_table$Step-df_table$Step[1]+1
       df_table<-merge(iter, df_table)
-      #df_table <- cbind(input$hauteur,df_table)
-      #colnames(df_table) <- c("Hauteur", "ELTime",	"Step",	"P1.psi",	"P2.psi",	"T1_oC",	"T2_oC",	"T3_oC")
+      #df_table <- cbind(input$Height,df_table)
+      #colnames(df_table) <- c("Height", "ELTime",	"Step",	"P1.psi",	"P2.psi",	"T1_oC",	"T2_oC",	"T3_oC")
     }
 
-    print("Enlever data si deja hauteur")
-    #rv$Testdata <- subset(rv$Testdata, !(rv$Testdata[[2]] %in% Hauteur))
-    #rv$Testdata <- subset(rv$Testdata, rv$Testdata[[2]] != Hauteur)
+    print("Remove data si deja Height")
+    #rv$Testdata <- subset(rv$Testdata, !(rv$Testdata[[2]] %in% Height))
+    #rv$Testdata <- subset(rv$Testdata, rv$Testdata[[2]] != Height)
     #a [! a %in% remove]
-    x <- rv$Testdata[ which(! rv$Testdata[[2]] %in% Hauteur), ]
-    #x <- rv$Testdata[ which(rv$Testdata[[2]]!=Hauteur), ]
+    x <- rv$Testdata[ which(! rv$Testdata[[2]] %in% Height), ]
+    #x <- rv$Testdata[ which(rv$Testdata[[2]]!=Height), ]
     rv$Testdata<-x
     print(names(rv$Testdata))
     
     # APPEND USER ROW
     print("APPEND")
-    #rv$Testdata <- subset(rv$Testdata, !(rv$Testdata[[2]] %in% Hauteur))
+    #rv$Testdata <- subset(rv$Testdata, !(rv$Testdata[[2]] %in% Height))
     df_table$id <- rownames(df_table)
-    df_table$Enlever <- NA
+    df_table$Remove <- NA
 
     rv$Testdata <- rbind(rv$Testdata, df_table) 
     rv$Testdata$id <- rownames(rv$Testdata)
 
-    print("nomfile")
-    nomfile<-paste0("d_",input$date,"_",strftime(input$heure, "%T"),"_",input$operateur,"_",input$xylem)
-    nomfile <- str_replace_all(nomfile, c("-"="",":"="", "é"= "e", "à"="a", "è"= "e", "ô" = "o", "ç"="c", "É"="E", "È"="E", "Î"="i", "Ç"="C"))
-    cat(nomfile, "\n")
+    print("namefile")
+    namefile<-paste0("d_",input$date,"_",strftime(input$time, "%T"),"_",input$operator,"_",input$device)
+    namefile <- str_replace_all(namefile, c("-"="",":"="", "é"= "e", "à"="a", "è"= "e", "ô" = "o", "ç"="c", "É"="E", "È"="E", "Î"="i", "Ç"="C"))
+    cat(namefile, "\n")
 
     print("summarise")
     print(names(rv$Testdata))
     rv2$data_mean <- rv$Testdata %>% 
-      group_by(Hauteur) %>% 
+      group_by(Height) %>% 
       summarise(n=n(), P1_mean=mean(P1.psi), P1_sd=sd(P1.psi), P1_cv=P1_sd/P1_mean,
                 P2_mean=mean(P2.psi), P2_sd=sd(P2.psi), P2_cv=P2_sd/P2_mean)
-    rv2$data_mean$Bar=rv2$data_mean$Hauteur/1000 
+    rv2$data_mean$Bar=rv2$data_mean$Height/1000 
     
     print("lm")
     model1 <- lm(Bar~P1_mean, rv2$data_mean)
     model2 <- lm(Bar~P2_mean, rv2$data_mean)
-    ordorig <- cbind("Intercept",model1$coefficients[[1]],model2$coefficients[[1]])
-    pente <- cbind("pente",model1$coefficients[[2]],model2$coefficients[[2]])
+    intercept <- cbind("Intercept",model1$coefficients[[1]],model2$coefficients[[1]])
+    slope <- cbind("Slope",model1$coefficients[[2]],model2$coefficients[[2]])
     adj.r.squared <- cbind("adj.r.squared",summary(model1)$adj.r.squared,summary(model2)$adj.r.squared)
-    rv2$pente <- rbind(adj.r.squared,ordorig,pente)
-    colnames(rv2$pente)<-c("Variable","P1","P2")
-    print(rv2$pente)
+    rv2$slope <- rbind(adj.r.squared,intercept,slope)
+    colnames(rv2$slope)<-c("Variable","P1","P2")
+    print(rv2$slope)
     
     rv$Testdata<-rv$Testdata %>%
       rowwise() %>%
-      mutate(Enlever = getRemoveButton(id, idS = "", lab = "Tab1"))
+      mutate(Remove = getRemoveButton(id, idS = "", lab = "Tab1"))
    
     proxyTable <- DT::dataTableProxy("Testdata")
  
@@ -131,38 +131,38 @@ server <- function(input, output, session) {
       rv$Testdata <- myTable
 
       rv2$data_mean <- rv$Testdata %>% 
-        group_by(Hauteur) %>% 
+        group_by(Height) %>% 
         summarise(n=n(), P1_mean=mean(P1.psi), P1_sd=sd(P1.psi), P1_cv=P1_sd/P1_mean,
                   P2_mean=mean(P2.psi), P2_sd=sd(P2.psi), P2_cv=P2_sd/P2_mean)
-      rv2$data_mean$Bar=rv2$data_mean$Hauteur/1000 
+      rv2$data_mean$Bar=rv2$data_mean$Height/1000 
       print(head(rv2$data_mean))
       
       model1 <- lm(Bar~P1_mean, rv2$data_mean)
       model2 <- lm(Bar~P2_mean, rv2$data_mean)
-      ordorig <- cbind("Intercept",model1$coefficients[[1]],model2$coefficients[[1]])
-      pente <- cbind("pente",model1$coefficients[[2]],model2$coefficients[[2]])
+      intercept <- cbind("Intercept",model1$coefficients[[1]],model2$coefficients[[1]])
+      slope <- cbind("Slope",model1$coefficients[[2]],model2$coefficients[[2]])
       adj.r.squared <- cbind("adj.r.squared",summary(model1)$adj.r.squared,summary(model2)$adj.r.squared)
-      rv2$pente <- rbind(adj.r.squared,ordorig,pente)
-      colnames(rv2$pente)<-c("Variable","P1","P2") 
-      print(head(rv2$pente))    
+      rv2$slope <- rbind(adj.r.squared,intercept,slope)
+      colnames(rv2$slope)<-c("Variable","P1","P2") 
+      print(head(rv2$slope))    
       
     })   
 
 
     output$arduino <- DT::renderDataTable({
-      write.csv(rv$Testdata, paste0("OUTPUTS/CALIBRATION/", nomfile,"_arduino.csv"),  row.names=FALSE)
+      write.csv(rv$Testdata, paste0("OUTPUTS/CALIBRATION/", namefile,"_arduino.csv"),  row.names=FALSE)
       DT::datatable(rv$Testdata, #rownames = FALSE, colnames = c("Step",	"Heigh (cm)",		"ELTime (s)", "P1(psi)", "P2(psi)",	"T1(oC)",	"T2(oC)",	 "T3(oC)" ),
                     options = list(searching = FALSE,lengthChange = FALSE),
                     editable = TRUE,
                     escape   = FALSE,
-                    caption = htmltools::tags$caption("Aperçu des données Arduino", style="color:blue")) %>%
+                    caption = htmltools::tags$caption("Overview of Arduino data", style="color:blue")) %>%
         formatRound(columns = c(4:6), digits = 4)
     })
                                                               
     output$table <- DT::renderDataTable({  
-      write.csv(rv2$data_mean, paste0("OUTPUTS/CALIBRATION/",nomfile,"_moyenne.csv"),  row.names=FALSE)
+      write.csv(rv2$data_mean, paste0("OUTPUTS/CALIBRATION/",namefile,"_mean.csv"),  row.names=FALSE)
       DT::datatable(subset(rv2$data_mean, select = -c(Bar) ), colnames = c('Step', 'Heigh (cm)', 'n', 'P1 Average', 'P1 StdDev', 'P1 CV  (<0.05)', 'P2 Average', 'P2 StdDev', 'P2 CV  (<0.05)'), 
-                    caption = htmltools::tags$caption("Aperçu des moyennes", style="color:blue"),
+                    caption = htmltools::tags$caption("Overview of average values", style="color:blue"),
                     options = list(dom = 't')) %>% 
         formatRound(columns = c(3:8), digits = 2) %>% 
         formatStyle('P1_cv',
@@ -184,12 +184,12 @@ server <- function(input, output, session) {
       "}"
     )
     
-    output$pente <- DT::renderDataTable({
-      write.csv(rv2$pente, paste0("OUTPUTS/CALIBRATION/",nomfile,"_coeff.csv"),  row.names=FALSE)
-      pente[1,1] <- "adj.r.squared (R2 > 0.999)"
+    output$slope <- DT::renderDataTable({
+      write.csv(rv2$slope, paste0("OUTPUTS/CALIBRATION/",namefile,"_coeff.csv"),  row.names=FALSE)
+      slope[1,1] <- "adj.r.squared (R2 > 0.999)"
       
-      DT::datatable(rv2$pente, 
-                    caption = htmltools::tags$caption("Régression", style="color:blue"),
+      DT::datatable(rv2$slope, 
+                    caption = htmltools::tags$caption("Regression", style="color:blue"),
                     options = 
                       list(rowCallback = JS(rowCallback),
                            dom = 't')) 
@@ -200,13 +200,13 @@ server <- function(input, output, session) {
       ggplot(rv2$data_mean, aes(P1_mean, Bar)) + geom_point() +
         geom_smooth(method=lm) +
         ggtitle("P1") +
-        xlab("Presure units (psi)") + ylab("bar")
+        xlab("Pressure units (psi)") + ylab("bar")
       }) 
     output$hist2 <- renderPlot({
       ggplot(rv2$data_mean, aes(P2_mean, Bar)) + geom_point() +
         geom_smooth(method=lm)+
         ggtitle("P2") +
-        xlab("Presure units (psi)") + ylab("bar")
+        xlab("Pressure units (psi)") + ylab("bar")
     })
     
 ####### DOWNLOAD BUTTON 
@@ -229,11 +229,11 @@ server <- function(input, output, session) {
     reset(id = "", asis = FALSE)
     rv$Testdata<-NULL
     rv2$data_mean<-NULL
-    rv2$pente<-NULL
+    rv2$slope<-NULL
     proxyTable<-NULL
     myTable <-NULL
     output$table <- DT::renderDataTable({}) 
-    output$pente <- DT::renderDataTable({}) 
+    output$slope <- DT::renderDataTable({}) 
     output$hist1 <- renderPlot({}) 
     output$hist2 <- renderPlot({}) 
     output$arduino <- DT::renderDataTable({}) 
@@ -242,7 +242,7 @@ server <- function(input, output, session) {
     
 ############################################################
 ############################################################
-#ETAPE 2i PressureSensorCalibration  (lecture)
+#Step 2i Pressure sensor calibration  (reading)
   observe({
       #volumes = getVolumes() # this makes the directory at the base of your computer.
       shinyFileChoose(input, 'folder', roots=c(wd='.'), defaultPath="OUTPUTS/CALIBRATION", pattern="_arduino", filetypes=c('csv'))
@@ -252,36 +252,36 @@ server <- function(input, output, session) {
   observeEvent(input$recalcL, {
     folder<-substr(as.character(input$folder)[1],48,1000000L)
     x<-unlist(gregexpr(pattern ='_arduino.csv',folder))
-    nomfile=paste0(substr(folder,1,x[1]-1))
-    print("Nom du fichier de calibration importé")
-    print(nomfile)
+    namefile=paste0(substr(folder,1,x[1]-1))
+    print("Name of imported calibration file")
+    print(namefile)
   #observeEvent(input$recalcL, {
-  #nomfile<-paste0("d_",input$dateL,"_",strftime(input$heureL, "%T"),"_",input$operateurL,"_",input$xylemL)
-  #nomfile <- str_replace_all(nomfile, c("-"="",":"="", "é"= "e", "à"="a", "è"= "e", "ô" = "o", "ç"="c", "É"="E", "È"="E", "Î"="i", "Ç"="C"))
-  #cat(nomfile)
-  Testdata<-read.csv(paste0("OUTPUTS/CALIBRATION/", nomfile,"_arduino.csv"))
-  data_mean<-read.csv(paste0("OUTPUTS/CALIBRATION/",nomfile,"_moyenne.csv"))
+  #namefile<-paste0("d_",input$dateL,"_",strftime(input$timeL, "%T"),"_",input$operatorL,"_",input$deviceL)
+  #namefile <- str_replace_all(namefile, c("-"="",":"="", "é"= "e", "à"="a", "è"= "e", "ô" = "o", "ç"="c", "É"="E", "È"="E", "Î"="i", "Ç"="C"))
+  #cat(namefile)
+  Testdata<-read.csv(paste0("OUTPUTS/CALIBRATION/", namefile,"_arduino.csv"))
+  data_mean<-read.csv(paste0("OUTPUTS/CALIBRATION/",namefile,"_moyenne.csv"))
   model1 <- lm(Bar~P1_mean, data_mean)
   model2 <- lm(Bar~P2_mean, data_mean)
   
-  ordorig <- cbind("Intercept",model1$coefficients[[1]],model2$coefficients[[1]])
-  pente <- cbind("pente",model1$coefficients[[2]],model2$coefficients[[2]])
+  intercept <- cbind("Intercept",model1$coefficients[[1]],model2$coefficients[[1]])
+  slope <- cbind("Slope",model1$coefficients[[2]],model2$coefficients[[2]])
   adj.r.squared <- cbind("adj.r.squared",summary(model1)$adj.r.squared,summary(model2)$adj.r.squared)
-  pente <- rbind(adj.r.squared,ordorig,pente)
-  colnames(pente)<-c("Variable","P1","P2")
-  pente[1,1] <- "adj.r.squared (R2 > 0.999)"
+  slope <- rbind(adj.r.squared,intercept,slope)
+  colnames(slope)<-c("Variable","P1","P2")
+  slope[1,1] <- "adj.r.squared (R2 > 0.999)"
 
   output$arduinoL <- DT::renderDataTable({
-    DT::datatable(subset(Testdata, select = -c(id,Enlever) ), rownames = FALSE, colnames = c("Step",	"Heigh (cm)",		"ELTime (s)", "P1(psi)", "P2(psi)",	#"T1(oC)",	"T2(oC)",	
+    DT::datatable(subset(Testdata, select = -c(id,Remove) ), rownames = FALSE, colnames = c("Step",	"Height (cm)",		"ELTime (s)", "P1(psi)", "P2(psi)",	#"T1(oC)",	"T2(oC)",	
                                                                                              "T3(oC)" ),
                   options = list(searching = FALSE,lengthChange = FALSE),
-                  caption = htmltools::tags$caption("Aperçu des données Arduino", style="color:blue")  ) %>% 
+                  caption = htmltools::tags$caption("Overview of Arduino data", style="color:blue")  ) %>% 
       formatRound(columns = c(4:6), digits = 4)
   })
  
   output$tableL <- DT::renderDataTable({
-    DT::datatable(subset(data_mean, select = -c(Bar) ), colnames = c('Step', 'Heigh (cm)', 'n', 'P1 Average', 'P1 StdDev', 'P1 CV  (<0.05)', 'P2 Average', 'P2 StdDev', 'P2 CV  (<0.05)'), 
-                  caption = htmltools::tags$caption("Aperçu des moyennes", style="color:blue"),
+    DT::datatable(subset(data_mean, select = -c(Bar) ), colnames = c('Step', 'Height (cm)', 'n', 'P1 Average', 'P1 StdDev', 'P1 CV  (<0.05)', 'P2 Average', 'P2 StdDev', 'P2 CV  (<0.05)'), 
+                  caption = htmltools::tags$caption("Overview of average values", style="color:blue"),
                   options = list(dom = 't')) %>% 
       formatRound(columns = c(3:8), digits = 2) %>% 
       formatStyle('P1_cv',
@@ -303,9 +303,9 @@ server <- function(input, output, session) {
     "}"
   )
   
-  output$penteL <- DT::renderDataTable({
-    DT::datatable(pente,  
-                  caption = htmltools::tags$caption("Régression", style="color:blue"),
+  output$slopeL <- DT::renderDataTable({
+    DT::datatable(slope,  
+                  caption = htmltools::tags$caption("Regression", style="color:blue"),
                   options = 
                     list(rowCallback = JS(rowCallback),
                          dom = 't')) 
@@ -329,8 +329,8 @@ server <- function(input, output, session) {
   
   ############################################################
   ############################################################
-  #ETAPE 3 SingleKmeasurement 
-  #choix des intrants 
+  #STEP 3 Measurement 
+  #choice of inputs
   observe({
     print("CALIBRATION")
     #volumes = getVolumes() # this makes the directory at the base of your computer.
@@ -340,25 +340,25 @@ server <- function(input, output, session) {
   observe({
     print("CALIBRATION peek")
     #volumes = getVolumes() # this makes the directory at the base of your computer.
-    shinyFileChoose(input, 'folderPTm', roots=c(wd='.'), defaultPath="www/couleur", pattern="_peek", filetypes=c('csv'))
+    shinyFileChoose(input, 'folderPTm', roots=c(wd='.'), defaultPath="www/color", pattern="_peek", filetypes=c('csv'))
     folderPTm<-substr(as.character(input$folderPTm)[1],42,1000000L)
     x2<-unlist(gregexpr(pattern ='_peek.csv',folderPTm))
-    nomfile2=paste0("d_",substr(folderPTm,1,x2[1]-1))
-    print(nomfile2)  #### 
+    namefile2=paste0("d_",substr(folderPTm,1,x2[1]-1))
+    print(namefile2)  #### 
     
-    if (file.exists(paste0("www/couleur/",nomfile2,"_peek.csv"))) {
-      peek_coeff <- read.csv(paste0("www/couleur/",nomfile2,"_peek.csv"))
+    if (file.exists(paste0("www/color/",namefile2,"_peek.csv"))) {
+      peek_coeff <- read.csv(paste0("www/color/",namefile2,"_peek.csv"))
       #print(peek_coeff)
       choiceList <- peek_coeff[, 1]
-      updateSelectInput(session, "peek_sel", label = "Couleur", choices = choiceList, selected = '')
+      updateSelectInput(session, "peek_sel", label = "Peek-tube ID", choices = choiceList, selected = '')
     }
     
     parm1_choice <- read.csv(paste0("www/parm1_choice.csv"),header = FALSE)
     choiceListparm1 <- parm1_choice[, 1]
-    updateSelectInput(session, "parm1", label = "expérience (dossier):", choices = choiceListparm1, selected = '')
+    updateSelectInput(session, "parm1", label = "Experiment (file):", choices = choiceListparm1, selected = '')
     parm2_choice <- read.csv(paste0("www/parm2_choice.csv"),header = FALSE)
     choiceListparm2 <- parm2_choice[, 1]
-    updateSelectInput(session, "parm2", label = "nom du mesureur:", choices = choiceListparm2, selected = '')  
+    updateSelectInput(session, "parm2", label = "Name of the operator:", choices = choiceListparm2, selected = '')  
     parm3_choice <- read.csv(paste0("www/parm3_choice.csv"),header = FALSE)
     choiceListparm3 <- parm3_choice[, 1]
     updateSelectInput(session, "parm3", label = "parm3:", choices = choiceListparm3, selected = '')  
@@ -389,7 +389,7 @@ server <- function(input, output, session) {
     
     cat("--Validate \n")
     validate(
-      need(input$peek_sel != 'Pas encore de choix', 'Please choose a state.'),
+      need(input$peek_sel != 'No choices yet', 'Please choose a state.'),
       need(input$parm1 != "", 'Please choose a state.'),
       need(input$parm2 != "", 'Please choose a state.'),
       need(input$parm3 != "", 'Please choose a state.'),
@@ -408,17 +408,17 @@ server <- function(input, output, session) {
       rvz$df_tablem <- subset(rvz$df_tablem, P2.psi!="Inf")
      }
     
-    intrant <- data.frame (first_column  = c("parm1","parm2","parm3","parm3i","parm4","parm5","parm6","folder Preasure Sersors Calibration","folder PEEKtubeCalibration","couleur","Stemdiameter1","Stemdiameter2","Stemlength","Commentaires","parm7","T1_oC","T2_oC"),
-                           second_column  = c(input$parm1,input$parm2,input$parm3,input$parm3i,input$parm4,input$parm5,as.character(zoo::as.Date(as.numeric(input$parm6))),substr(as.character(input$folderPSm)[1],48,1000000L),substr(as.character(input$folderPTm)[1],48,1000000L),input$peek_sel,input$Stemdiameter1,input$Stemdiameter2,input$Stemlength,input$commentairem,input$parm7,input$T1_oC,input$T2_oC))
-    write.csv(intrant, paste0("OUTPUTS/SINGLE/",input$parm1,"/",input$parm7,"/",input$parm1,"_",input$parm2,"_",input$parm3,"_",input$parm3i,"_",input$parm4,"_",input$parm5,"_",input$parm6,"_INTRANT.csv"),  row.names=FALSE)
+    INPUT <- data.frame (first_column  = c("parm1","parm2","parm3","parm3i","parm4","parm5","parm6","folder Preasure Sersors Calibration","folder PEEKtubeCalibration","color","Stemdiameter1","Stemdiameter2","Stemlength","Comments","parm7","T1_oC","T2_oC"),
+                           second_column  = c(input$parm1,input$parm2,input$parm3,input$parm3i,input$parm4,input$parm5,as.character(zoo::as.Date(as.numeric(input$parm6))),substr(as.character(input$folderPSm)[1],48,1000000L),substr(as.character(input$folderPTm)[1],48,1000000L),input$peek_sel,input$Stemdiameter1,input$Stemdiameter2,input$Stemlength,input$Commentm,input$parm7,input$T1_oC,input$T2_oC))
+    write.csv(INPUT, paste0("OUTPUTS/SINGLE/",input$parm1,"/",input$parm7,"/",input$parm1,"_",input$parm2,"_",input$parm3,"_",input$parm3i,"_",input$parm4,"_",input$parm5,"_",input$parm6,"_INPUT.csv"),  row.names=FALSE)
 
     folderPSm<-substr(as.character(input$folderPSm)[1],48,1000000L)
     x<-unlist(gregexpr(pattern ='_coeff.csv',folderPSm))
-    #nomfile=paste0("d_",substr(folderPSm,1,x[1]-1))
-    nomfile=paste0(substr(folderPSm,1,x[1]-1))
-    print("Nom du fichier de calibration importé")
-    print(nomfile)
-    data_coeff<-read.csv(paste0("OUTPUTS/CALIBRATION/",nomfile,"_COEFF.csv"))
+    #namefile=paste0("d_",substr(folderPSm,1,x[1]-1))
+    namefile=paste0(substr(folderPSm,1,x[1]-1))
+    print("Name of imported calibration file")
+    print(namefile)
+    data_coeff<-read.csv(paste0("OUTPUTS/CALIBRATION/",namefile,"_COEFF.csv"))
     colnames(data_coeff)<-c("Variable","P1 calibration","P2 calibration")
 
     write.csv(data_coeff, paste0("OUTPUTS/SINGLE/",input$parm1,"/",input$parm7,"/",input$parm1,"_",input$parm2,"_",input$parm3,"_",input$parm3i,"_",input$parm4,"_",input$parm5,"_",input$parm6,"_COEFF.csv"),  row.names=FALSE)
@@ -426,11 +426,11 @@ server <- function(input, output, session) {
 
       folderPTm<-substr(as.character(input$folderPTm)[1],42,1000000L)
       x2<-unlist(gregexpr(pattern ='_peek.csv',folderPTm))
-      nomfile2=paste0("d_",substr(folderPTm,1,x2[1]-1))
-      print(nomfile2)
-      peek_coeff <- read.csv(paste0("www/couleur/",nomfile2,"_peek.csv"))
+      namefile2=paste0("d_",substr(folderPTm,1,x2[1]-1))
+      print(namefile2)
+      peek_coeff <- read.csv(paste0("www/color/",namefile2,"_peek.csv"))
       Res_PEEK<-base::subset(peek_coeff,ColorID==input$peek_sel)[[2]]
-      peek <- data.frame (first_column  = c("Color of PEEK tubing (from « PEEKtubeCalibration Tab »)", 
+      peek <- data.frame (first_column  = c("Peek-tube ID (from « PEEKtubeCalibration Tab »)", 
                                             "Resistance of choosen PEEK tubing at 25 oC (MPa mmol-1 s)"),
                           second_column = c(input$peek_sel, Res_PEEK)
       )
@@ -549,7 +549,7 @@ server <- function(input, output, session) {
   
   output$tablem <- DT::renderDataTable({
     DT::datatable(subset(df1$data_meanm, select = c(Step,n,P1_mean,P2_mean,Diffbar_mean,Diffbar_sd,Diffbar_cv) ), 
-                  caption = htmltools::tags$caption("Aperçu des moyennes", style="color:blue"),
+                  caption = htmltools::tags$caption("Overview of average values", style="color:blue"),
                   options = list(dom = "ft",ordering=F,
                                  pageLength = 10000,
                                  searching = FALSE),rownames= FALSE) #%>% 
@@ -561,7 +561,7 @@ server <- function(input, output, session) {
     data_coeff,
     caption = htmltools::tags$caption(
       style = 'text-align: left; color:blue',
-      'Conversion in bar	(From Preasure Sersors Calibration Tab)'
+      'Conversion in bar	(From Pressure Sensor Calibration Tab)'
     ),
 
     options = list(dom = "ft",ordering=F,
@@ -575,7 +575,7 @@ server <- function(input, output, session) {
     colnames = rep("", ncol(peek)),
     caption = htmltools::tags$caption(
       style = 'text-align: left; color:blue',
-      'Constant for PEEK'
+      'Constant for peek-tube'
     ),
     options = list(dom = "ft",ordering=F,
                    pageLength = 10000,
@@ -585,11 +585,11 @@ server <- function(input, output, session) {
   output$table3m <- DT::renderDataTable({
     result1 <- data.frame (first_column  = c("","","Step 1","","","","Step 2","","","","","","Step 3","","","","","","","","","",""),
                            second_column = c("","ValidPeekChoice",
-                                             "Validate presuse sensors output (±?) and recalibrate if needed",
+                                             "Validate pressure sensors output (±?) and recalibrate if needed",
                                              "Presure sensor validation P1 (bar)",
                                              "Presure sensor validation P2 (bar)",
                                              "Average",
-                                             "Readings of K« rough » measurements (wait for 5 min of stability) [Output from LabView]",
+                                             "Readings of K« rough » measurements (wait for 5 min of stability)",
                                              "P1 (bar)",
                                              "P2 (bar)",
                                              "K rough (mmol s-1 MPa-1)",
@@ -717,7 +717,7 @@ server <- function(input, output, session) {
     ggplot() + geom_point(data = z2, aes(ELTime, P1bar), colour = 'blue') +
       geom_point(data = z2, aes(ELTime, P2bar), colour = 'orange') +
       ggtitle("View for Log of Step 2") +
-      xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+      xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
       theme(plot.title = element_text(color = "blue"))
   }) 
   
@@ -753,12 +753,12 @@ server <- function(input, output, session) {
     cv_P1bar <- sd(z3$P1bar) / mean(z3$P1bar) 
     g21<-ggplot() + geom_point(data = z3, aes(ELTime, P1bar), colour = 'blue') +
       ggtitle(paste0("View for Log of Step 3 - cv=", round(cv_P1bar,6))) +
-      xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+      xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
       theme(plot.title = element_text(color = "blue")) 
     cv_P2bar <- sd(z3$P2bar) / mean(z3$P2bar) 
     g22<-ggplot() + geom_point(data = z3, aes(ELTime, P2bar), colour = 'orange') +
       ggtitle(paste0("View for Log of Step 3 - cv=", round(cv_P2bar,6))) +
-      xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+      xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
       theme(plot.title = element_text(color = "orange"))
     grid.arrange(g21, g22, ncol=2)
   })
@@ -772,12 +772,12 @@ server <- function(input, output, session) {
   cv_P1bar <- sd(z3$P1bar) / mean(z3$P1bar) 
   g21<-ggplot() + geom_point(data = z3, aes(ELTime, P1bar), colour = 'blue') +
     ggtitle(paste0("View for Log of Step 3 - cv=", round(cv_P1bar,6))) +
-    xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+    xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
     theme(plot.title = element_text(color = "blue")) 
   cv_P2bar <- sd(z3$P2bar) / mean(z3$P2bar) 
   g22<-ggplot() + geom_point(data = z3, aes(ELTime, P2bar), colour = 'orange') +
     ggtitle(paste0("View for Log of Step 3 - cv=", round(cv_P2bar,6))) +
-    xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+    xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
     theme(plot.title = element_text(color = "orange"))
   grid.arrange(g21, g22, ncol=2)
   })
@@ -814,14 +814,14 @@ server <- function(input, output, session) {
   
   ############################################################
   ############################################################
-  #ETAPE 3i SingleKmeasurement  (lecture)
+  #STEP 3i Measurement  (reading)
   observe({
     #volumes = getVolumes() # this makes the directory at the base of your computer.
     shinyFileChoose(input, 'folder3i', roots=c(wd='.'), defaultPath="OUTPUTS/SINGLE", pattern="_ARDUINO", filetypes=c('csv'))
     
   }) 
     rvw2 <- reactiveValues(
-      intrantw =data.frame("first_column" = character(),	"second_column" = character()
+      INPUTw =data.frame("first_column" = character(),	"second_column" = character()
       ))  
 
   observeEvent(input$recalcL3i, {
@@ -831,34 +831,34 @@ server <- function(input, output, session) {
     x<-unlist(gregexpr(pattern ='_ARDUINO.csv',folder))
     print("x")
     print(x)
-    nomfile=paste0(substr(folder,1,x[1]-1))
-    print("Nom du fichier de mesure importé")
-    print(nomfile)
-    a<-base::gsub(',', '', nomfile)
+    namefile=paste0(substr(folder,1,x[1]-1))
+    print("Name of imported measurement file")
+    print(namefile)
+    a<-base::gsub(',', '', namefile)
     a<- base::strsplit(a, '\" \"')
     print(a)
     print(is.na(a[[1]][2]))
 
     if(is.na(a[[1]][2])){
-      nomfile2=paste0("OUTPUTS/SINGLE/")}
+      namefile2=paste0("OUTPUTS/SINGLE/")}
     if(!is.na(a[[1]][2])){
-      nomfile<-a[[1]][3]
-      print(nomfile)
-      nomfile2=paste0("OUTPUTS/SINGLE/",a[[1]][1],"/",a[[1]][2],"/")}
+      namefile<-a[[1]][3]
+      print(namefile)
+      namefile2=paste0("OUTPUTS/SINGLE/",a[[1]][1],"/",a[[1]][2],"/")}
     
-      print(nomfile2)
-      print(paste0(nomfile2, nomfile,"_ARDUINO.csv"))
+      print(namefile2)
+      print(paste0(namefile2, namefile,"_ARDUINO.csv"))
     
-    arduino<-read.csv(paste0(nomfile2, nomfile,"_ARDUINO.csv"))
-    data_coeff<-read.csv(paste0(nomfile2,nomfile,"_COEFF.csv"))
-    peek<-read.csv(paste0(nomfile2,nomfile,"_PEEK.csv"))
-    result1<-read.csv(paste0(nomfile2,nomfile,"_STEP.csv"))
-    result<-read.csv(paste0(nomfile2, nomfile,"_RESULTS.csv"))
-    intrant<-read.csv(paste0(nomfile2, nomfile,"_INTRANT.csv"))
+    arduino<-read.csv(paste0(namefile2, namefile,"_ARDUINO.csv"))
+    data_coeff<-read.csv(paste0(namefile2,namefile,"_COEFF.csv"))
+    peek<-read.csv(paste0(namefile2,namefile,"_PEEK.csv"))
+    result1<-read.csv(paste0(namefile2,namefile,"_STEP.csv"))
+    result<-read.csv(paste0(namefile2, namefile,"_RESULTS.csv"))
+    INPUT<-read.csv(paste0(namefile2, namefile,"_INPUT.csv"))
     Res_PEEK<-peek$second_column[2]
-    #intrant[6,2]<-as.character(zoo::as.Date(as.numeric(intrant[6,2])))
+    #INPUT[6,2]<-as.character(zoo::as.Date(as.numeric(INPUT[6,2])))
 
-    rvw2$intrantw <- intrant
+    rvw2$INPUTw <- INPUT
     rvw1<- reactiveValues(
       resultw =result,
       result1w =result1)
@@ -880,8 +880,8 @@ server <- function(input, output, session) {
     )
   
     z<-rvz$df_tablem
-    z$t1_meanx=as.numeric(intrant[16,2])
-    z$t2_meanx=as.numeric(intrant[17,2])
+    z$t1_meanx=as.numeric(INPUT[16,2])
+    z$t2_meanx=as.numeric(INPUT[17,2])
     z <- z %>%
       group_by(Step) %>%
       mutate(ELTimemax =max(ELTime))
@@ -915,15 +915,15 @@ server <- function(input, output, session) {
                 ELTime2_max=max(ELTime2*condition_1,na.rm=TRUE)
       )
    
-     observeEvent(input$intrantL1_cell_edit, {
-      rvw2$intrantw[input$intrantL1_cell_edit$row,2] <<- (DT::coerceValue(input$intrantL1_cell_edit$value, rvw2$intrantw[input$intrantL1_cell_edit$row,2]))
+     observeEvent(input$INPUTL1_cell_edit, {
+      rvw2$INPUTw[input$INPUTL1_cell_edit$row,2] <<- (DT::coerceValue(input$INPUTL1_cell_edit$value, rvw2$INPUTw[input$INPUTL1_cell_edit$row,2]))
        Pithdiameter=0
        Res_PEEK =as.numeric(peek$second_column[2])
-       Stemlength=as.numeric(rvw2$intrantw[13,2])
-       Stemdiameter1=as.numeric(rvw2$intrantw[11,2])
-       Stemdiameter2=as.numeric(rvw2$intrantw[12,2])
-       t1_mean3=as.numeric(rvw2$intrantw[16,2])
-       t2_mean3=as.numeric(rvw2$intrantw[17,2])
+       Stemlength=as.numeric(rvw2$INPUTw[13,2])
+       Stemdiameter1=as.numeric(rvw2$INPUTw[11,2])
+       Stemdiameter2=as.numeric(rvw2$INPUTw[12,2])
+       t1_mean3=as.numeric(rvw2$INPUTw[16,2])
+       t2_mean3=as.numeric(rvw2$INPUTw[17,2])
        
        result <- data.frame (first_column  = c("Overview", "Results >>>","","Validation >>>","","",""),
                              second_column  = c(
@@ -990,19 +990,19 @@ server <- function(input, output, session) {
       
        rvw1$resultw<-result
        rvw1$result1w<-result1
-       write.csv(rvw2$intrantw, paste0(nomfile2,nomfile,"_INTRANT.csv"),  row.names=FALSE)
-       write.csv(rvw1$resultw, paste0(nomfile2,nomfile,"_RESULTS.csv"),  row.names=FALSE)
-       write.csv(rvw1$result1w, paste0(nomfile2,nomfile,"_STEP.csv"),  row.names=FALSE)
+       write.csv(rvw2$INPUTw, paste0(namefile2,namefile,"_INPUT.csv"),  row.names=FALSE)
+       write.csv(rvw1$resultw, paste0(namefile2,namefile,"_RESULTS.csv"),  row.names=FALSE)
+       write.csv(rvw1$result1w, paste0(namefile2,namefile,"_STEP.csv"),  row.names=FALSE)
      })
 
-     output$intrantL1 <-  DT::renderDataTable({
-     #print(rvw2$intrantw)
-       DT::datatable(rvw2$intrantw,
-                     caption = htmltools::tags$caption( style = 'text-align: left; color:blue',"Intrants"),
+     output$INPUTL1 <-  DT::renderDataTable({
+     #print(rvw2$INPUTw)
+       DT::datatable(rvw2$INPUTw,
+                     caption = htmltools::tags$caption( style = 'text-align: left; color:blue',"INPUTs"),
                      options = list(dom = "ft",ordering=F,
                                     pageLength = 10000,
                                     searching = FALSE),
-                     colnames = rep("", ncol(rvw2$intrantw)),
+                     colnames = rep("", ncol(rvw2$INPUTw)),
                      rownames= FALSE,
                      editable = TRUE ) 
      })
@@ -1020,7 +1020,7 @@ server <- function(input, output, session) {
         data_coeff,
         caption = htmltools::tags$caption(
           style = 'text-align: left; color:blue',
-          'Conversion in bar	(From Preasure Sersors Calibration Tab)'
+          'Conversion in bar	(from Pressure Sensor calibration Tab)'
         ),
         options = list(dom = "ft",ordering=F,
                        pageLength = 10000,
@@ -1033,7 +1033,7 @@ server <- function(input, output, session) {
         colnames = rep("", ncol(peek)),
         caption = htmltools::tags$caption(
           style = 'text-align: left; color:blue',
-          'Constant for PEEK'
+          'Constant for peek-tube'
         ),
         options = list(dom = "ft",ordering=F,
                        pageLength = 10000,
@@ -1105,7 +1105,7 @@ server <- function(input, output, session) {
       ggplot() + geom_point(data = z2, aes(ELTime, P1bar), colour = 'blue') +
         geom_point(data = z2, aes(ELTime, P2bar), colour = 'orange') +
         ggtitle("View for Log of Step 2") +
-        xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+        xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
         theme(plot.title = element_text(color = "blue"))
     })
     
@@ -1136,12 +1136,12 @@ server <- function(input, output, session) {
       cv_P1bar <- sd(z3$P1bar) / mean(z3$P1bar) 
       g21<-ggplot() + geom_point(data = z3, aes(ELTime, P1bar), colour = 'blue') +
         ggtitle(paste0("View for Log of Step 3 - cv=", round(cv_P1bar,6))) +
-        xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+        xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
         theme(plot.title = element_text(color = "blue"))
       cv_P2bar <- sd(z3$P2bar) / mean(z3$P2bar) 
       g22<-ggplot() + geom_point(data = z3, aes(ELTime, P2bar), colour = 'orange') +
         ggtitle(paste0("View for Log of Step 3 - cv=", round(cv_P2bar,6))) +
-        xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+        xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
         theme(plot.title = element_text(color = "orange"))
       grid.arrange(g21, g22, ncol=2)
     })
@@ -1157,69 +1157,69 @@ server <- function(input, output, session) {
       cv_P1bar <- sd(z3$P1bar) / mean(z3$P1bar) 
       g21<-ggplot() + geom_point(data = z3, aes(ELTime, P1bar), colour = 'blue') +
         ggtitle(paste0("View for Log of Step 3 - cv=", round(cv_P1bar,6))) +
-        xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+        xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
         theme(plot.title = element_text(color = "blue")) 
       cv_P2bar <- sd(z3$P2bar) / mean(z3$P2bar) 
       g22<-ggplot() + geom_point(data = z3, aes(ELTime, P2bar), colour = 'orange') +
         ggtitle(paste0("View for Log of Step 3 - cv=", round(cv_P2bar,6))) +
-        xlab("Total Elapsed Time (sec)") + ylab("Preasure (bar)")+
+        xlab("Total Elapsed Time (sec)") + ylab("Pressure (bar)")+
         theme(plot.title = element_text(color = "orange"))
       grid.arrange(g21, g22, ncol=2)
     })
     
   })  
   
-  #("RENOMMER FICHIERS")
+  #("RENAME FILE")
   observeEvent(input$renamedata, {
     print(getwd())
     folder<-substr(as.character(input$folder3i)[1],43,1000000L)
-    print("Renommer fichier")
+    print("Rename file")
     print("folder")
     print(folder)
     x<-unlist(gregexpr(pattern ='_ARDUINO.csv',folder))
     print("x")
     print(x)
-    nomfile=paste0(substr(folder,1,x[1]-1))
-    print("Nom du fichier de mesure importé")
-    print(nomfile)
-    a<-base::gsub(',', '', nomfile)
+    namefile=paste0(substr(folder,1,x[1]-1))
+    print("Name of imported measurement file")
+    print(namefile)
+    a<-base::gsub(',', '', namefile)
     a<- base::strsplit(a, '\" \"')
     print(a)
     print(is.na(a[[1]][2]))
     
     if(is.na(a[[1]][2])){
-      nomfile2=paste0("OUTPUTS/SINGLE/")}
+      namefile2=paste0("OUTPUTS/SINGLE/")}
     if(!is.na(a[[1]][2])){
-      nomfile<-a[[1]][3]
-      print(nomfile)
-      nomfile2=paste0("OUTPUTS/SINGLE/",a[[1]][1],"/",a[[1]][2],"/")}
+      namefile<-a[[1]][3]
+      print(namefile)
+      namefile2=paste0("OUTPUTS/SINGLE/",a[[1]][1],"/",a[[1]][2],"/")}
     
-    print(nomfile2)
-    print(paste0(nomfile2, nomfile,"_ARDUINO.csv"))
-    cat(nomfile2, "\n")
-    cat(nomfile, "\n")
-    cat(paste0(nomfile2, nomfile,"_INTRANT.csv"), "\n")
-    intrantx<-read.csv(paste0(nomfile2, nomfile,"_INTRANT.csv"))
-    arduinox<-read.csv(paste0(nomfile2, nomfile,"_ARDUINO.csv"))
-    data_coeffx<-read.csv(paste0(nomfile2,nomfile,"_COEFF.csv"))
-    peekx<-read.csv(paste0(nomfile2,nomfile,"_PEEK.csv"))
-    result1x<-read.csv(paste0(nomfile2,nomfile,"_STEP.csv"))
-    resultx<-read.csv(paste0(nomfile2, nomfile,"_RESULTS.csv"))
+    print(namefile2)
+    print(paste0(namefile2, namefile,"_ARDUINO.csv"))
+    cat(namefile2, "\n")
+    cat(namefile, "\n")
+    cat(paste0(namefile2, namefile,"_INPUT.csv"), "\n")
+    INPUTx<-read.csv(paste0(namefile2, namefile,"_INPUT.csv"))
+    arduinox<-read.csv(paste0(namefile2, namefile,"_ARDUINO.csv"))
+    data_coeffx<-read.csv(paste0(namefile2,namefile,"_COEFF.csv"))
+    peekx<-read.csv(paste0(namefile2,namefile,"_PEEK.csv"))
+    result1x<-read.csv(paste0(namefile2,namefile,"_STEP.csv"))
+    resultx<-read.csv(paste0(namefile2, namefile,"_RESULTS.csv"))
 
     cat("parms \n")
-    parm1=intrantx[1,2]
-    parm7=intrantx[15,2]
-    parm2=intrantx[2,2]
-    parm3=intrantx[3,2]
-    parm3i=intrantx[4,2]
-    parm4=intrantx[5,2]
-    parm5=intrantx[6,2]
-    parm6=intrantx[7,2]
+    parm1=INPUTx[1,2]
+    parm7=INPUTx[15,2]
+    parm2=INPUTx[2,2]
+    parm3=INPUTx[3,2]
+    parm3i=INPUTx[4,2]
+    parm4=INPUTx[5,2]
+    parm5=INPUTx[6,2]
+    parm6=INPUTx[7,2]
     cat("write \n")
     dir.create(paste0("OUTPUTS/SINGLE/",parm1))
     dir.create(paste0("OUTPUTS/SINGLE/",parm1,"/",parm7))
-    cat(paste0("OUTPUTS/SINGLE/", parm1,"/",parm7,"/",parm1,"_",parm2,"_",parm3,"_",parm3i,"_",parm4,"_",parm5,"_",parm6,"_INTRANT.csv"), "write \n")
-    write.csv(intrantx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm7,"/",parm1,"_",parm2,"_",parm3,"_",parm3i,"_",parm4,"_",parm5,"_",parm6,"_INTRANT.csv"),  row.names=FALSE)
+    cat(paste0("OUTPUTS/SINGLE/", parm1,"/",parm7,"/",parm1,"_",parm2,"_",parm3,"_",parm3i,"_",parm4,"_",parm5,"_",parm6,"_INPUT.csv"), "write \n")
+    write.csv(INPUTx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm7,"/",parm1,"_",parm2,"_",parm3,"_",parm3i,"_",parm4,"_",parm5,"_",parm6,"_INPUT.csv"),  row.names=FALSE)
     write.csv(arduinox, paste0("OUTPUTS/SINGLE/", parm1,"/",parm7,"/",parm1,"_",parm2,"_",parm3,"_",parm3i,"_",parm4,"_",parm5,"_",parm6,"_ARDUINO.csv"),  row.names=FALSE)
     write.csv(data_coeffx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm7,"/",parm1,"_",parm2,"_",parm3,"_",parm3i,"_",parm4,"_",parm5,"_",parm6,"_COEFF.csv"),  row.names=FALSE)
     write.csv(peekx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm7,"/",parm1,"_",parm2,"_",parm3,"_",parm3i,"_",parm4,"_",parm5,"_",parm6,"_PEEK.csv"),  row.names=FALSE)
@@ -1227,18 +1227,18 @@ server <- function(input, output, session) {
     write.csv(resultx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm7,"/",parm1,"_",parm2,"_",parm3,"_",parm3i,"_",parm4,"_",parm5,"_",parm6,"_RESULTS.csv"),  row.names=FALSE)
     
     dir.create("OUTPUTS/DELETE/")
-    file.copy(paste0(nomfile2, nomfile,"_INTRANT.csv"), "OUTPUTS/DELETE")
-    unlink(paste0(nomfile2, nomfile,"_INTRANT.csv"))
-    file.copy(paste0(nomfile2, nomfile,"_ARDUINO.csv"), "OUTPUTS/DELETE")
-    unlink(paste0(nomfile2, nomfile,"_ARDUINO.csv"))
-    file.copy(paste0(nomfile2, nomfile,"_COEFF.csv"), "OUTPUTS/DELETE")
-    unlink(paste0(nomfile2, nomfile,"_COEFF.csv"))
-    file.copy(paste0(nomfile2, nomfile,"_PEEK.csv"), "OUTPUTS/DELETE")
-    unlink(paste0(nomfile2, nomfile,"_PEEK.csv"))
-    file.copy(paste0(nomfile2, nomfile,"_STEP.csv"), "OUTPUTS/DELETE")
-    unlink(paste0(nomfile2, nomfile,"_STEP.csv"))
-    file.copy(paste0(nomfile2, nomfile,"_RESULTS.csv"), "OUTPUTS/DELETE")
-    unlink(paste0(nomfile2, nomfile,"_RESULTS.csv"))
+    file.copy(paste0(namefile2, namefile,"_INPUT.csv"), "OUTPUTS/DELETE")
+    unlink(paste0(namefile2, namefile,"_INPUT.csv"))
+    file.copy(paste0(namefile2, namefile,"_ARDUINO.csv"), "OUTPUTS/DELETE")
+    unlink(paste0(namefile2, namefile,"_ARDUINO.csv"))
+    file.copy(paste0(namefile2, namefile,"_COEFF.csv"), "OUTPUTS/DELETE")
+    unlink(paste0(namefile2, namefile,"_COEFF.csv"))
+    file.copy(paste0(namefile2, namefile,"_PEEK.csv"), "OUTPUTS/DELETE")
+    unlink(paste0(namefile2, namefile,"_PEEK.csv"))
+    file.copy(paste0(namefile2, namefile,"_STEP.csv"), "OUTPUTS/DELETE")
+    unlink(paste0(namefile2, namefile,"_STEP.csv"))
+    file.copy(paste0(namefile2, namefile,"_RESULTS.csv"), "OUTPUTS/DELETE")
+    unlink(paste0(namefile2, namefile,"_RESULTS.csv"))
 
   })
   
@@ -1249,15 +1249,15 @@ server <- function(input, output, session) {
     #shinyjs::js$refresh()
     refresh()
     reset(id = "", asis = FALSE)
-    rvw2$intrantw<-NULL
+    rvw2$INPUTw<-NULL
     rvz$df_tablem<-NULL
     df1$zdf1<-NULL
     df1$data_meanm <- NULL
-    intrant<-NULL
+    INPUT<-NULL
     result <-NULL
     output$arduinomL <- DT::renderDataTable({})
     output$table4mL <- DT::renderDataTable({})
-    output$intrantL1 <- DT::renderDataTable({})
+    output$INPUTL1 <- DT::renderDataTable({})
     output$table2mL <- DT::renderDataTable({})
     output$table3mL <- DT::renderDataTable({})  
     output$table1mL <- DT::renderDataTable({}) 
@@ -1269,8 +1269,8 @@ server <- function(input, output, session) {
   
 ############################################################
 ############################################################
-#ETAPE 4 ODS
-  #Dossier qui contient tout les sous-dossiers avec les feuilles ODS
+#STEP 4 Data compilation
+  #Folder containing all subfolders with csv sheets
   #observe({
   #  shinyDirChoose(input, 'folder4', roots=c(wd='.'), defaultPath="OUTPUTS", filetypes=c('', 'csv'))
   #}) 
@@ -1283,51 +1283,51 @@ server <- function(input, output, session) {
     setwd(input$DIR)
     print("local")
     print(getwd())
-    dir.create("SORTIE", showWarnings = F)
+    dir.create("OUTPUT", showWarnings = F)
     #Feuille à lire
     #SHEET="SingleKmeasurement"
     print(paste0(input$DIR))
-    #liste de tous les fichiers ODS
-    liste_fichiers<- ( list.files(path=getwd(), recursive = T, pattern="_INTRANT.csv") )
-    #liste des fichiers deja lus
-    liste_fichiers_deja_lus<-data.frame(no=integer(),
-                                        fichierslu=character()) 
-    print("BD")
-    BD<-data.frame(matrix(ncol = 38, nrow = 0))
-    x <- c("fichier","DOSSIER","MESUREUR","ID_MESURE","INTRANT3","INTRANT3i","ECHANTILLON","MESURE",
-           "DATE","APPAREIL","GAMME_PEEK_TUBE",	"VALID_PEEK_TUBE",	"VALID_PSENSOR",	"TIME",	"STABILITY",	
+    #list of all csv files
+    list_files<- ( list.files(path=getwd(), recursive = T, pattern="_INPUT.csv") )
+    #list of files already read
+    list_files_already_read<-data.frame(no=integer(),
+                                        readfiles=character()) 
+    print("DB")
+    DB<-data.frame(matrix(ncol = 38, nrow = 0))
+    x <- c("file","FOLDER","OPERATOR","ID_MESURE","INPUT3","INPUT3i","SAMPLE_ID","MEASUREMENT_ID",
+           "DATE","DEVICE","GAMME_PEEK_TUBE",	"VALID_PEEK_TUBE",	"VALID_PSENSOR",	"TIME",	"STABILITY",	
            "SLOPE_P1","INTERCEPT_P1","SLOPE_P2","INTERCEPT_P2","R_PEEKTUBE_25","P1","P2","K_BRUT_MMOL",
-           "K_BRUT_KG","CV","P3","T1","T2","T_AV","R_PEEKTUBE_T","T3","K_T","K_25","D","AS","L","KS","COMMENTAIRE")
-    colnames(BD) <- x
+           "K_BRUT_KG","CV","P3","T1","T2","T_AV","R_PEEKTUBE_T","T3","K_T","K_25","D","AS","L","KS","COMMENTS")
+    colnames(DB) <- x
 
-    if (file.exists("SORTIE/liste_fichiers.csv")){
-      liste_fichiers_deja_lus<-read.csv("SORTIE/liste_fichiers.csv")
-      BD<-read.csv("SORTIE/BD.csv")
+    if (file.exists("OUTPUT/list_files.csv")){
+      list_files_already_read<-read.csv("OUTPUT/list_files.csv")
+      DB<-read.csv("OUTPUT/DB.csv")
     }
-    colnames(liste_fichiers_deja_lus)<-c("no","fichierslu")
+    colnames(list_files_already_read)<-c("no","readfiles")
     
-    #liste des nouveaux fichiers
-    already_read <-(liste_fichiers_deja_lus$fichierslu)
-    #colnames(already_read)<-c("fichierslu")
-    to_read <- setdiff(liste_fichiers,already_read)
+    #list of new files
+    already_read <-(list_files_already_read$readfiles)
+    #colnames(already_read)<-c("readfiles")
+    to_read <- setdiff(list_files,already_read)
     
     
-    #boucle sur fichiers à lire
-    if (length(to_read)>0) { #condition s'il y en a des nouveaux
-      for (i in 1:length(to_read)){ #boucle
-        x<-unlist(gregexpr(pattern ='_INTRANT.csv',to_read[i]))
+    #loop on files to be read
+    if (length(to_read)>0) { #condition if there are new ones
+      for (i in 1:length(to_read)){ #loop
+        x<-unlist(gregexpr(pattern ='_INPUT.csv',to_read[i]))
         fichier=substr(to_read[i],1,x[1]-1)
              
-        cat("fichier", i, fichier, "\n")
+        cat("file", i, fichier, "\n")
         #pour imprimer dans la shiny
         showModal(modalDialog(
-          title = "Lecture du fichier:",
-          paste0("fichier", i, fichier, "\n"),
+          title = "Reading the file:",
+          paste0("file", i, fichier, "\n"),
           easyClose = TRUE,
           footer = NULL
         ))
         
-        #condition que la feuille existe
+        #if the sheet exists
         ARDUINO <- tryCatch({
           # The code you want run
           read.csv(paste0(fichier,"_ARDUINO.csv"))
@@ -1341,8 +1341,8 @@ server <- function(input, output, session) {
         COEFF <- tryCatch({
           read.csv(paste0(fichier,"_COEFF.csv"))
         }, warning = function(war) {          NULL        }, error = function(err) {          NULL        })
-        INTRANT <- tryCatch({
-          read.csv(paste0(fichier,"_INTRANT.csv"))
+        INPUT <- tryCatch({
+          read.csv(paste0(fichier,"_INPUT.csv"))
         }, warning = function(war) {          NULL        }, error = function(err) {          NULL        })
         PEEK <- tryCatch({
           read.csv(paste0(fichier,"_PEEK.csv"))
@@ -1358,19 +1358,19 @@ server <- function(input, output, session) {
         
         
         
-        DOSSIER<-	INTRANT[1,2]
-        MESUREUR<-	INTRANT[2,2]
-        if(grepl('-', INTRANT[7,2])==T){ID_MESURE<-	as.character(INTRANT[7,2])}
-        if(grepl('-', INTRANT[7,2])==F){ID_MESURE<-	as.character(zoo::as.Date(as.numeric(INTRANT[7,2])))}
-        #ID_MESURE<-	as.character(zoo::as.Date(as.numeric(INTRANT[7,2])))
-        INTRANT3<-	INTRANT[3,2]
-        INTRANT3i<-	INTRANT[4,2]
-        ECHANTILLON<-	INTRANT[5,2]
-        MESURE<-	INTRANT[6,2]
-        if(grepl('-', INTRANT[7,2])==T){DATE<-	as.character(INTRANT[7,2])}
-        if(grepl('-', INTRANT[7,2])==F){DATE<-	as.character(zoo::as.Date(as.numeric(INTRANT[7,2])))}
-       # DATE<-	as.character(zoo::as.Date(as.numeric(INTRANT[7,2])))
-        APPAREIL<-	INTRANT[15,2]
+        DOSSIER<-	INPUT[1,2]
+        MESUREUR<-	INPUT[2,2]
+        if(grepl('-', INPUT[7,2])==T){ID_MESURE<-	as.character(INPUT[7,2])}
+        if(grepl('-', INPUT[7,2])==F){ID_MESURE<-	as.character(zoo::as.Date(as.numeric(INPUT[7,2])))}
+        #ID_MESURE<-	as.character(zoo::as.Date(as.numeric(INPUT[7,2])))
+        INPUT3<-	INPUT[3,2]
+        INPUT3i<-	INPUT[4,2]
+        ECHANTILLON<-	INPUT[5,2]
+        MESURE<-	INPUT[6,2]
+        if(grepl('-', INPUT[7,2])==T){DATE<-	as.character(INPUT[7,2])}
+        if(grepl('-', INPUT[7,2])==F){DATE<-	as.character(zoo::as.Date(as.numeric(INPUT[7,2])))}
+       # DATE<-	as.character(zoo::as.Date(as.numeric(INPUT[7,2])))
+        DEVICE<-	INPUT[15,2]
         GAMME_PEEK_TUBE<-	STEP[2,4]	
         VALID_PEEK_TUBE<-	RESULTS[4,4]
         VALID_PSENSOR<-	RESULTS[5,4]	
@@ -1394,33 +1394,33 @@ server <- function(input, output, session) {
         T3<-	STEP[20,4] #
         K_T<-	STEP[22,4] #
         K_25<-	STEP[23,4] #
-        D<-	(as.numeric(INTRANT[11,2])+as.numeric(INTRANT[12,2]))/2
-        AS<-(((((as.numeric(INTRANT[11,2])+as.numeric(INTRANT[12,2]))/2/1000)/2)^2*pi-((0/1000)/2)^2*pi))
-        L<- INTRANT[13,2]
+        D<-	(as.numeric(INPUT[11,2])+as.numeric(INPUT[12,2]))/2
+        AS<-(((((as.numeric(INPUT[11,2])+as.numeric(INPUT[12,2]))/2/1000)/2)^2*pi-((0/1000)/2)^2*pi))
+        L<- INPUT[13,2]
         KS<- RESULTS[3,4] #
-        COMMENTAIRE<-	INTRANT[14,2]
+        COMMENTS<-	INPUT[14,2]
         
-        fichier_res<-as.data.frame(cbind(fichier,DOSSIER,MESUREUR,ID_MESURE,INTRANT3,INTRANT3i,ECHANTILLON,MESURE,
-                                     DATE,APPAREIL,GAMME_PEEK_TUBE,	VALID_PEEK_TUBE,	VALID_PSENSOR,	TIME,	STABILITY,	
+        file_res<-as.data.frame(cbind(file,FOLDER,OPERATOR,ID_MESURE,INPUT3,INPUT3i,SAMPLE_ID,MEASUREMENT_ID,
+                                     DATE,DEVICE,GAMME_PEEK_TUBE,	VALID_PEEK_TUBE,	VALID_PSENSOR,	TIME,	STABILITY,	
                                      SLOPE_P1,INTERCEPT_P1,SLOPE_P2,INTERCEPT_P2,R_PEEKTUBE_25,P1,P2,K_BRUT_MMOL,
-                                     K_BRUT_KG,CV,P3,T1,T2,T_AV,R_PEEKTUBE_T,T3,K_T,K_25,D,AS,L,KS,COMMENTAIRE))
+                                     K_BRUT_KG,CV,P3,T1,T2,T_AV,R_PEEKTUBE_T,T3,K_T,K_25,D,AS,L,KS,COMMENTS))
         
-        BD<-plyr::rbind.fill(BD,fichier_res)
+        DB<-plyr::rbind.fill(DB,file_res)
       } #dim(to_read)[1]
       removeModal(session = getDefaultReactiveDomain())
-      #Exportation de la BD des fichiers qui sont lus
-      write.csv(BD,"SORTIE/BD.csv", row.names=F)
-      #Exportation du fichier qui contient la liste de fichiers qui sont lus
-      write.csv(liste_fichiers,"SORTIE/liste_fichiers.csv")
+      #Export DB of files being read
+      write.csv(DB,"OUTPUT/DB.csv", row.names=F)
+      #Export the file containing the list of files that have been read
+      write.csv(list_files,"OUTPUT/list_files.csv")
       
     } #length(to_read)>0
 
-    output$text <- renderText({ "Terminer" })
+    output$text <- renderText({ "Finish" })
     setwd(direct)
-  }) ##ETAPE 4 ODS
+  }) ##STEP 4 Data compilation
 
 
-#fermer l'application  
+#close the application 
   observe({
     if (input$close > 0) stopApp()                             # stop shiny
   })
