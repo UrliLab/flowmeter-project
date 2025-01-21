@@ -1,8 +1,4 @@
----
-title: "Urli Lab Pressure-drop Flowmeter"
-author: "Urli M., Lambert M.-C., and Périé C."
-output: github_document
----
+# Urli Lab Pressure-drop Flowmeter
 
 ## Authors
 
@@ -47,7 +43,7 @@ library(readODS)
 library(gridExtra)
 library(ggplot2)
 library(dplyr)
-
+```
 
 ## How to Use
 
