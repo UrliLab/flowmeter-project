@@ -20,20 +20,32 @@ library(shinyFiles)
 library(fontawesome)
 library(readODS)
 library(gridExtra)
+library(ggplot2)
+library(dplyr)
+
 conflicts_prefer(DT::dataTableOutput)
+
 
 options(shiny.maxRequestSize = 1000 * 1024 ^ 2)
 options(shiny.usecairo = FALSE) #R4.2.0
 
+
 # header ------------------------------------------------------------------
 header <-
-  dashboardHeader(title = span(img(
-    src = 'MFFPw3.gif', width = "100px", align = "left"
-  )))
+  dashboardHeader(title = span(tagList(
+    img(src = 'signature-PIV.svg', width = "100px", align = "left"), " ",
+    img(src = 'Twitter Header Photo TR.png', width = "100px", align = "left"))),
+  titleWidth = 300)
 
 # Sidebard ----------------------------------------------------------------
 sidebard <- dashboardSidebar(
+  width = 300,
   sidebarMenu(
+    menuItem(
+      "Flowmeter application",
+      tabName = "info",
+      icon = icon("question-circle")
+    ),
     menuItem(
       'Peek-tube calibration', 
       tabName = 'step1', 
@@ -64,11 +76,7 @@ sidebard <- dashboardSidebar(
       tabName = "step4",
       icon = icon("tasks")
     ),
-    menuItem(
-      "Informations",
-      tabName = "info",
-      icon = icon("question-circle")
-    ),
+
     br(),    br(),    br(),    br(),    br(),
     tags$button(
       id = 'close',
@@ -82,7 +90,7 @@ sidebard <- dashboardSidebar(
     ),
     br(),    br(),
     tags$div(HTML("<h5>
-                  V2024-10
+                  V2024-11
                   </h5>"))
     )
     )
@@ -111,27 +119,111 @@ body <- dashboardBody(withMathJax(),
                           }"
                           )
                         ),
+                      tags$head(
+                        tags$style(HTML("
+        .skin-blue .main-header .navbar {
+          background-color: #19406C;
+        }
+        .skin-blue .main-header .logo {
+          background-color: #19406C;
+        }
+        .skin-blue .main-sidebar {
+          background-color: #095797;
+        }
+      "))
+                      ),
 
      tabItems(
 # step1 ------------------------------------------------------------------
        #############################
        tabItem(
-         tabName = 'step1',
-        h2(strong("Peek-tube calibration")),
+        tabName = 'step1',
+        h1(strong("Peek-tube calibration")),
         shinydashboard::box(width = NULL,
-             background = "black",
-             height = 2),
-         br()
+             background = "orange",
+             height = 3),
+        fluidPage(
+          shinyjs::useShinyjs(),
+          id = "myappm1",
+
+          tabsetPanel(
+            tabPanel("1- Raw data", DT::DTOutput(outputId = "tablepeek"),
+                     tagList(tags$p('Import raw data and click "Add"')),
+                     splitLayout(cellWidths = c("25%", "25%","25%", "25%"), 
+                                 {div(textInput(inputId = "IDMEASUREMENT1", label = "Id Measurement:"), style = "font-size:100%")}
+                     ),
+                     splitLayout(cellWidths = c("25%", "25%","25%", "25%"), 
+                                 {div(textInput(inputId = "HeightPeek", label = "Height (m):"), style = "font-size:100%")}, 
+                                 {div(textInput(inputId = "TimePeek", label = "Time (s):"), style = "font-size:100%")},
+                                 {div(textInput(inputId = "VolPeek", label = "Volume (mL):"), style = "font-size:100%")},
+                                 {div(textInput(inputId = "TempPeek", label = "Temperature of the solution (°C):"), style = "font-size:100%")}
+                     ),
+                     
+                     actionButton("Add", "Add"),
+                     actionButton("resetAllpeek", "Reset")
+            ),
+            tabPanel("2- Hydraulic resistance", 
+                     br(),
+                     htmlOutput("txtOutputp1"),
+                     plotOutput(outputId = "hist2P"),
+                     htmlOutput("txtOutputp2")
+            ),
+            tabPanel("3- Summary of peek-tube resistance values", 
+                     br(),
+                     tagList(tags$p("Complete the information for the summary of peek-tube resistance values:")),
+                     br(),
+                     splitLayout( 
+                       cellWidths = c("20%", "20%", "20%", "20%", "20%"), 
+                       {div(textInput(inputId = "PARAMETER1", label = "Parameter 1:"), style = "font-size:70%")},
+                       {div(textInput(inputId = "OPERATOR", label = "Operator:"), style = "font-size:70%")},
+                       {div(textInput(inputId = "Peek_tube_ID", label = "Peek-tube ID:"), style = "font-size:70%")},
+                       {div(textInput(inputId = "DEVICE", label = "Device:"), style = "font-size:70%")}
+                     ),
+                     splitLayout(cellWidths = c("20%", "20%"), 
+                                 verbatimTextOutput(outputId = "tablepeekR"),
+                                 verbatimTextOutput(outputId = "tablepeekK")
+                     ), 
+                     {div(shinyFiles::shinyFilesButton('folderPC', 'Select a Peek-tube file if exist', 'Select a Peek-tube file if exist', FALSE))}, 
+                     actionButton("Add2", "Add"),
+                     
+                     DT::DTOutput(outputId = "tablepeekid"),
+                     br(),br(),
+                     splitLayout(cellWidths = c("20%", "20%"), 
+                                 textAreaInput("nomid", label=NULL, value ="Data name for exportation", rows=1),
+                                 actionButton("generateButton","Write Data"))
+            ),
+            tabPanel("4- Average resistance values per peek-tube", 
+                     br(),
+                     splitLayout(cellWidths = c("20%", "20%", "20%"), 
+                                 {div(shinyFiles::shinyFilesButton('folderPC5id', 'Select a Peek-tube file id', 'Select a Peek-tube file id', FALSE))}, 
+                                 {div(shinyFiles::shinyFilesButton('folderPC5', 'Select a Peek-tube file if exist', 'Select a Peek-tube file if exist', FALSE))}, 
+                                 {div(actionButton("Add5", "Compute mean by Peek-tube ID"))},
+                                 actionButton('reset5', 'Reset Input')
+                     ),
+                     splitLayout(cellWidths = c("20%", "20%"), 
+                                 {div(verbatimTextOutput('rawInputValue41'))},
+                                 {div(verbatimTextOutput('rawInputValue42'))}
+                     ),
+                     br(),
+                     DT::DTOutput(outputId = "tablepeektub"),
+                     br(),
+                     splitLayout(cellWidths = c("20%", "20%"), 
+                                 textAreaInput("nomid5", label=NULL, value ="Data name for exportation", rows=1),
+                                 actionButton("generateButton5","Write Data")
+                     )
+            )
+          ) #tabsetPanel 
+        )
       ), #tabItem step1
 
 # step2 ------------------------------------------------------------------
       #############################
       tabItem(
         tabName = 'step2',
-        h2(strong("Pressure sensor calibration")),
+        h1(strong("Pressure sensor calibration")),
         shinydashboard::box(width = NULL,
-            background = "black",
-            height = 2),
+            background = "orange",
+            height = 3),
         shinydashboard::box(
                 solidHeader = TRUE,
                 width = NULL,
@@ -145,19 +237,13 @@ body <- dashboardBody(withMathJax(),
                   div(timeInput(inputId = "time", label = "Time:", value = Sys.time(),seconds = F), style = "font-size:70%"),
                   div(textInput(inputId = "operator", label = "Operator:"), style = "font-size:70%"),
                   div(textInput(inputId = "device", label = "Device:"), style = "font-size:70%"),
-                  #div(numericInput(inputId="height", label="Height (cm):", 5, min = 5, max = 100, step=5), style = "font-size:70%"),
                   div(textInput("breaks", "Heights (cm, separated by a comma,\n ex: 5,10,15,20,25,30,35,40,45,50): ", placeholder = "Enter the heights..."), style = "font-size:70%"),
-                  div(textAreaInput("pasted", "Paste data here:"), style = "font-size:70%"),
-                  tags$script("
-                Shiny.addCustomMessageHandler('resetValue', function(variableName) {
-                Shiny.onInputChange(variableName, null);});
-                ")
+                  div(textAreaInput("pasted", "Paste data here:"), style = "font-size:70%")#,
+ 
                   ),
                   br(),
                   actionButton("recalc", "Submit", icon("paper-plane"), style =
-                                 "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4"),
-
-                  actionButton("resetAll", "Reset")
+                                 "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4")
                 ),
                 
                 conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
@@ -168,17 +254,15 @@ body <- dashboardBody(withMathJax(),
                                  )),
                 
                 mainPanel(br(),div(DT::dataTableOutput("table"), style = "font-size:70%"),
-                          br(),div(DT::dataTableOutput("pente"), style = "font-size:70%"),
-                        
+                          br(),div(DT::dataTableOutput("slope2"), style = "font-size:70%"),
+                          div(DT::dataTableOutput("slope1"), style = "font-size:70%"),
                           br(),mainPanel(
                                   fluidRow(
                                     splitLayout(cellWidths = c("50%", "50%"), plotOutput("hist1"), plotOutput("hist2"))
                                   )),
                         br(),
-                   div(DT::dataTableOutput("arduino"), style = "font-size:70%"),
-                        
-                   br(),downloadButton("downloadData", "Download the results")
-                          )
+                   div(DT::dataTableOutput("arduino"), style = "font-size:70%")
+                    )
               ) #box
        ), #tabItem step2
       
@@ -186,10 +270,10 @@ body <- dashboardBody(withMathJax(),
       #############################
       tabItem(
         tabName = 'step2i',
-        h2(strong("Pressure sensor calibration (reading)")),
+        h1(strong("Pressure sensor calibration (reading)")),
         shinydashboard::box(width = NULL,
-            background = "black",
-            height = 2),
+            background = "orange",
+            height = 3),
         br(),
         shinydashboard::box(
             solidHeader = TRUE,
@@ -202,10 +286,6 @@ body <- dashboardBody(withMathJax(),
               shinyjs::useShinyjs(),
               div(id = "myapp",
                   shinyFilesButton('folder', 'Select a calibration file', 'Select a calibration file', FALSE)#,
-                  #div(dateInput(inputId = "dateL", label = "Date:", value = NULL), style = "font-size:70%"),
-                  #div(timeInput(inputId = "timeL", label = "Time:", value = Sys.time(),seconds = F), style = "font-size:70%"),
-                  #div(textInput(inputId = "operatorL", label = "Operator:"), style = "font-size:70%"),
-                  #div(textInput(inputId = "deviceL", label = "Device:"), style = "font-size:70%")
               ),
               br(),
               actionButton("recalcL", "Submit", icon("paper-plane"), style =
@@ -213,7 +293,9 @@ body <- dashboardBody(withMathJax(),
               ),
             
             mainPanel(br(),div(DT::dataTableOutput("tableL"), style = "font-size:70%"),
-                      br(),div(DT::dataTableOutput("penteL"), style = "font-size:70%"),
+                      br(),div(DT::dataTableOutput("slope2L"), style = "font-size:70%"),
+                      div(DT::dataTableOutput("slope1L"), style = "font-size:70%"),
+                      
                       br(),mainPanel(
                         fluidRow(
                           splitLayout(cellWidths = c("50%", "50%"), plotOutput("hist1L"), plotOutput("hist2L"))
@@ -228,10 +310,10 @@ body <- dashboardBody(withMathJax(),
       #############################
       tabItem(
         tabName = 'step3',
-        h2(strong("Measurement")),
+        h1(strong("Measurement")),
         shinydashboard::box(width = NULL,
-            background = "black",
-            height = 1),
+            background = "orange",
+            height = 3),
         br(),
         shinydashboard::box(
           solidHeader = TRUE,
@@ -241,31 +323,40 @@ body <- dashboardBody(withMathJax(),
             width = 12,
             shinyjs::useShinyjs(),
             div(id = "myappm",
-               # mainPanel(#"main panel",
+
                   fluidRow(
-                    p("Files are in the folder: flowmeter\\Shiny\\OUTPUTS\\SINGLE\\project\\device"),
+                    p("Files are in the folder: flowmeter\\Shiny\\OUTPUTS\\SINGLE\\Experiment\\Device"),
+                    tags$style(type='text/css', '#rawInputValue1 {background-color: #DAE6F0; color: #4A98D9;}'),
+                    tags$style(type='text/css', '#rawInputValue2 {background-color: #DAE6F0; color: #4A98D9;}'),
                     splitLayout(cellWidths = c("50%", "50%"), 
                                 {div(shinyFilesButton('folderPTm', 'Select a Peek-tube calibration file', 'Select a Peek-tube calibration file', FALSE))
                                 }, 
                                 {div(shinyFilesButton('folderPSm', 'Select a Pressure Sensors Calibration file', 'Select a Pressure Sensors Calibration file', FALSE))
-                                } ),
+                                }
+                                ),
+                    splitLayout(cellWidths = c("50%", "50%"), 
+                                {div(verbatimTextOutput('rawInputValue1'))},
+                                {div(verbatimTextOutput('rawInputValue2'))}
+                    ),
 
                     fluidRow(
                       column(2, selectInput('peek_sel', label = 'Peek-tube ID', choices = 'No choices yet', width="200px")),
-                      column(2, div(textInput(inputId = "parm7", label = "Device:"), style = "font-size:70%")),
-                      column(2, div(textInput(inputId = "T1_oC", label = "T1 (oC):"), style = "font-size:70%")),
-                      column(2, div(textInput(inputId = "T2_oC", label = "T2 (oC):"), style = "font-size:70%"))),
+                      column(2, div(textInput(inputId = "parm8", label = "Device:"), style = "font-size:70%")),
+                      column(2, div(textInput(inputId = "T1_oC", label = "T1 (oC):"), style = "font-size:70%"))),
                     fluidRow(
-                      column(2, selectInput('parm1', label = 'Experiment (file):', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
-                      column(2, selectInput('parm2', label = 'Name of the operator:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
-                      column(2, selectInput('parm3', label = 'Parameter3:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
-                      column(2, selectInput('parm3i', label = 'Parameter3i:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
-                      column(2, div(textInput(inputId = "parm4", label = "Sample ID:"), style = "font-size:70%")),
-                      column(2, div(textInput(inputId = "parm5", label = "Measurement ID:"), style = "font-size:70%")),
-                      column(2, div(dateInput(inputId = "parm6", label = "Date:", value = Sys.time()), style = "font-size:70%"))),
+                      column(2, selectInput('parm1', label = 'Parameter 1:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm2', label = 'Parameter 2:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm3', label = 'Parameter 3:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
+                      column(2, selectInput('parm4', label = 'Parameter 4:', choices = 'No choices yet', width="200px"), style = "font-size:70%"),
+                      column(2, div(textInput(inputId = "parm5", label = "Parameter 5:"), style = "font-size:70%")),
+                      column(2, div(textInput(inputId = "parm6", label = "Parameter 6:"), style = "font-size:70%")),
+                      column(2, div(dateInput(inputId = "parm7", label = "Date:", value = Sys.time()), style = "font-size:70%"))),
                 div(textAreaInput("pastedm", "Paste data here:"), style = "font-size:70%",height = '50%'),
-                div(textAreaInput("commentairem", "Comments:"), style = "font-size:70%"),
-                splitLayout(cellWidths = c("15%", "15%", "15%"), 
+                div(textAreaInput("Comments", "Comments:"), style = "font-size:70%"),
+                splitLayout(cellWidths = c("15%", "15%", "15%", "15%"), 
+                            
+                            {div(textInput(inputId = "T2_oC", label = "T2 (oC):"), style = "font-size:70%")
+                              },
                             {div(numericInput(inputId="Stemdiameter1", label="Stem diameter 1 (mm):", value=NA, min = 0, max = 100), style = "font-size:70%")
                             }, 
                             {div(numericInput(inputId="Stemdiameter2", label="Stem diameter 2 (mm):", value=NA, min = 0, max = 100), style = "font-size:70%")
@@ -273,13 +364,12 @@ body <- dashboardBody(withMathJax(),
                             {div(numericInput(inputId="Stemlength", label="Stem length (mm):", value=NA, min = 0, max = 100), style = "font-size:70%")                 
                             }
                             ) 
-                )#)
+                )
             ), 
-            #br(),
+
             actionButton("recalcm", "Submit", icon("paper-plane"), style =
                            "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4"),
-            
-            actionButton("resetAllm", "Reset")
+            actionButton("resetAllm", "Réinitialiser")
           ),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(
@@ -288,7 +378,6 @@ body <- dashboardBody(withMathJax(),
                                 id = "loadmessage")
                            )),
           mainPanel(
-                    #div(DT::dataTableOutput("tablem"), style = "font-size:70%", width = 6),
                     div(DT::dataTableOutput("table4m1"), style = "font-size:70%", width = 6),
                     div(DT::dataTableOutput("table4m2"), style = "font-size:70%", width = 6),
                     br(),
@@ -301,11 +390,8 @@ body <- dashboardBody(withMathJax(),
                     div(DT::dataTableOutput("table3m"), style = "font-size:70%", width = 6),
                     br(),
                     div(plotOutput("scatter"), style = "font-size:70%", width = 6),
-                    #div(plotOutput("scatter_step2"), style = "font-size:70%", width = 6),
-                    #div(plotOutput("scatter2"), style = "font-size:70%", width = 6),
                     div(plotOutput("scatter_step3"), style = "font-size:70%", width = 6),
-                    div(plotOutput("scatter_step3i"), style = "font-size:70%", width = 6),
-                    downloadButton("downloadDatam", "Download the results")
+                    div(plotOutput("scatter_step3i"), style = "font-size:70%", width = 6)
           )
             
         ) #box
@@ -315,10 +401,10 @@ body <- dashboardBody(withMathJax(),
 #############################
 tabItem(
   tabName = 'step3i',
-  h2(strong("Measurement (reading)")),
+  h1(strong("Measurement (reading)")),
   shinydashboard::box(width = NULL,
-      background = "black",
-      height = 2),
+      background = "orange",
+      height = 3),
   br(),
   shinydashboard::box(
     solidHeader = TRUE,
@@ -326,31 +412,26 @@ tabItem(
     bstatut = "danger" ,
     
     column(
-      width = 3,
+      width = 4,
       p("Files are in the folder: flowmeter\\Shiny\\OUTPUTS\\SINGLE"),
       shinyjs::useShinyjs(),
+      tags$style(type='text/css', '#rawInputValue11 {background-color: #DAE6F0; color: #4A98D9;}'),
       div(id = "myapp3i",
-          shinyFilesButton('folder3i', 'Select a measurement file', 'Select a measurement file', FALSE)#,
-          #div(dateInput(inputId = "dateL", label = "Date:", value = NULL), style = "font-size:70%"),
-          #div(timeInput(inputId = "timeL", label = "Time:", value = Sys.time(),seconds = F), style = "font-size:70%"),
-          #div(textInput(inputId = "operatorrL", label = "Operator:"), style = "font-size:70%"),
-          #div(textInput(inputId = "deviceL", label = "Device:"), style = "font-size:70%")
+          shinyFilesButton('folder3i', 'Select a measurement file', 'Select a measurement file', FALSE),
+          verbatimTextOutput('rawInputValue11')
       ),
       br(),
       actionButton("recalcL3i", "Submit", icon("paper-plane"), style =
                      "float:right; color: #fff; background-color: #8FBFDB; border-color: #2e6da4"),
-      
-      #shinyjs::useShinyjs(),
-      #shinyjs::extendShinyjs(text = "shinyjs.refresh = function() { location.reload(); }"),
-      actionButton("refresh", "Reset"),
-      br(),
-      br(),
-      p("Open the file, modify the parameters and click Rename files"),
-      actionButton("renamedata", "Rename files")
+    br(),
+    br(),
+    p("To rename a file: Open the file, change parameters (parm1 to parm8 or comments) and click on Rename files"),
+    actionButton("renamedata", "Rename files")
     ),
     
     mainPanel(
-      div(DT::dataTableOutput("intrantL1"), style = "font-size:70%", width = 6),
+      div(DT::dataTableOutput("INPUTL1"), style = "font-size:70%", width = 6),
+      div(DT::dataTableOutput("INPUTL2"), style = "font-size:70%", width = 6),
       br(),
       div(DT::dataTableOutput("table4mL1"), style = "font-size:70%", width = 6),
       div(DT::dataTableOutput("table4mL2"), style = "font-size:70%", width = 6),
@@ -364,11 +445,8 @@ tabItem(
       div(DT::dataTableOutput("table3mL"), style = "font-size:70%", width = 6),
       br(),
       div(plotOutput("scatterL"), style = "font-size:70%", width = 6),
-      #div(plotOutput("scatterL_step2"), style = "font-size:70%", width = 6),
-      #div(plotOutput("scatter2L"), style = "font-size:70%", width = 6),
       div(plotOutput("scatterL_step3"), style = "font-size:70%", width = 6),
-      div(plotOutput("scatterL_step3i"), style = "font-size:70%", width = 6),
-      #downloadButton("downloadDatamL", "Download the results")
+      div(plotOutput("scatterL_step3i"), style = "font-size:70%", width = 6)#,
     )
   ) #box
 ), #tabItem step3i
@@ -377,10 +455,10 @@ tabItem(
       #############################
       tabItem(
         tabName = 'step4',
-        h2(strong("Reading Measurement files")),
+        h1(strong("Reading Measurement files")),
         shinydashboard::box(width = NULL,
-            background = "black",
-            height = 2),
+            background = "orange",
+            height = 3),
         br(),
         shinydashboard::box(
           solidHeader = TRUE,
@@ -402,11 +480,26 @@ tabItem(
       #############################
       tabItem(
         tabName = 'info',
-        h2(strong("INFORMATIONS")),
+        h1(strong("Flowmeter application")),
         shinydashboard::box(width = NULL,
-            background = "black",
-            height = 2),
-        br()
+            background = "orange",
+            height = 3),
+        br(),
+        h4(strong("Références :")),
+        tags$div(
+          HTML("<h4>
+             <a href = 'https://github.com/UrliLab/flowmeter-project'
+             target='_blank'>https://github.com/UrliLab/flowmeter-project</a>
+             </h4>")),
+        fluidRow(
+          column(6,       tags$div(HTML("<center>
+          <a href='https://www.quebec.ca/gouvernement/ministere/ressources-naturelles-forets' target='_blank'>
+          <img src='MRNF_couleur.svg' width='250' height='80'>
+          </a></center>"))),
+          column(6,     tags$div(HTML("<center>
+          <a href='https://www.morganeurli.com/' target='_blank'>
+          <img src='Twitter Header Photo TR.png' width='250' height='80'>
+          </a></center>")))),tags$div(HTML("<center><a href='https://www.quebec.ca/droit-auteur' target='_blank'><br>&copy; Gouvernement du Québec, 2023</a></center>"))
         ) #tabItem info
       
    ) #tabItems
@@ -417,5 +510,5 @@ dashboardPage(header,
               title = "FLOWMETER",
               #dashboardSidebar(disable = TRUE),
               sidebard,
-              skin = "blue",
+              #skin = "blue",
               body)
