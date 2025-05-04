@@ -19,7 +19,7 @@ server <- function(input, output, session) {
   
 ############################################################
 ############################################################
-#STEP 1 Peek-tube calibration
+#STEP 1 PEEK tubing calibration
   print("start")  
   rv <- reactiveValues(
     df = data.frame(
@@ -29,8 +29,8 @@ server <- function(input, output, session) {
       Temperature = character()
     )
   )
-  dfpeek <- reactiveValues(
-    dfpeek_chg =data.frame("HeightPeek","TimePeek","VolPeek","TempPeek",
+  dfPEEK <- reactiveValues(
+    dfPEEK_chg =data.frame("HeightPEEK","TimePEEK","VolPEEK","TempPEEK",
                            "TIME_H","FLUX","FLUX_KGS","PRESSURE_PA","PRESSURE_MPA","K","N","FLUX_MMOLS")
   )
   dfresults <- reactiveValues(
@@ -41,7 +41,7 @@ server <- function(input, output, session) {
     df4 = data.frame(
       PARAMETER1 = character(),
       OPERATOR = character(),
-      Peek_tube_ID = character(),
+      PEEK_tubing_ID = character(),
       DEVICE = character(),
       K_25 = character(),
       R_25 = character()
@@ -49,18 +49,18 @@ server <- function(input, output, session) {
   )
 
   observe({
-    print("CALIBRATION peek color")
-    shinyFiles::shinyFileChoose(input, 'folderPC', roots=c(wd='.'), defaultPath="OUTPUTS/PEEK/id/", pattern="_peekid", filetypes=c('csv'))
+    print("CALIBRATION PEEK color")
+    shinyFiles::shinyFileChoose(input, 'folderPC', roots=c(wd='.'), defaultPath="OUTPUTS/PEEK/id/", pattern="_PEEKid", filetypes=c('csv'))
     folderPC<-substr(as.character(input$folderPC)[1],47,1000000L)
     print("folderPC")
     print(folderPC)
-    x2<-unlist(gregexpr(pattern ='_peekid.csv',folderPC))
+    x2<-unlist(gregexpr(pattern ='_PEEKid.csv',folderPC))
     namefile2=substr(folderPC,1,x2[1]-1)
     print("namefile2")#### 
     print(namefile2)#### 
     
-    if (file.exists(paste0("OUTPUTS/PEEK/id/",namefile2,"_peekid.csv"))) {
-      rv4$df4 <- read.csv(paste0("OUTPUTS/PEEK/id/",namefile2,"_peekid.csv"))
+    if (file.exists(paste0("OUTPUTS/PEEK/id/",namefile2,"_PEEKid.csv"))) {
+      rv4$df4 <- read.csv(paste0("OUTPUTS/PEEK/id/",namefile2,"_PEEKid.csv"))
     }
     
   })
@@ -79,26 +79,26 @@ server <- function(input, output, session) {
   observeEvent(input$reset5, {
     values$upload_5id <- 'reset5'
     values$upload_5 <- 'reset5'
-    output$tablepeektub <- DT::renderDT({})
+    output$tablePEEKtub <- DT::renderDT({})
     shinyjs::reset("nomid5")
   })
   
   observe({
     print("4- Average")
-    print("peek color id")
-    shinyFiles::shinyFileChoose(input, 'folderPC5id', roots=c(wd='.'), defaultPath="OUTPUTS/PEEK/id/", pattern="_peekid.csv", filetypes=c('csv'))
+    print("PEEK color id")
+    shinyFiles::shinyFileChoose(input, 'folderPC5id', roots=c(wd='.'), defaultPath="OUTPUTS/PEEK/id/", pattern="_PEEKid.csv", filetypes=c('csv'))
     folderPC5id_<-substr(as.character(file_input())[1],47,1000000L)
-    x2<-unlist(gregexpr(pattern ='_peekid.csv',folderPC5id_))
+    x2<-unlist(gregexpr(pattern ='_PEEKid.csv',folderPC5id_))
     namefile5id=substr(folderPC5id_,1,x2[1]-1)
     output$rawInputValue41 <- renderText({namefile5id})
   })
 
   
   observe({
-    print("peek color")
-    shinyFiles::shinyFileChoose(input, 'folderPC5', roots=c(wd='.'), defaultPath="www/color/", pattern="_peek.csv", filetypes=c('csv'))
+    print("PEEK color")
+    shinyFiles::shinyFileChoose(input, 'folderPC5', roots=c(wd='.'), defaultPath="www/color/", pattern="_PEEK.csv", filetypes=c('csv'))
     folderPC5_<-substr(as.character(file_input1())[1],38,1000000L)
-    x2<-unlist(gregexpr(pattern ='_peek.csv',folderPC5_))
+    x2<-unlist(gregexpr(pattern ='_PEEK.csv',folderPC5_))
     namefile5=substr(folderPC5_,1,x2[1]-1)
     output$rawInputValue42 <- renderText({namefile5})
   })
@@ -127,99 +127,99 @@ server <- function(input, output, session) {
   observeEvent(input$Add, {
     cat("--Validate \n")
     validate(
-      need(input$HeightPeek != "", 'Please choose a state.'),
-      need(input$TimePeek != "", 'Please choose a state.'),
-      need(input$VolPeek != "", 'Please choose a state.'),
-      need(input$TempPeek != "", 'Please choose a state.'),
+      need(input$HeightPEEK != "", 'Please choose a state.'),
+      need(input$TimePEEK != "", 'Please choose a state.'),
+      need(input$VolPEEK != "", 'Please choose a state.'),
+      need(input$TempPEEK != "", 'Please choose a state.'),
       need(input$IDMEASUREMENT1 != "", 'Please choose a state.')
     )
  
     rv$df <- rbind(rv$df, data.frame(
-      Height = input$HeightPeek, 
-      Duration = input$TimePeek,
-      Volume = input$VolPeek,
-      Temperature = input$TempPeek) %>%
+      Height = input$HeightPEEK, 
+      Duration = input$TimePEEK,
+      Volume = input$VolPEEK,
+      Temperature = input$TempPEEK) %>%
         na.omit())
     print(rv$df)
     
     df_char<-rv$df
     print("numeric")
-    HeightPeek_<- as.numeric(df_char$Height)
-    TimePeek_<- as.numeric(df_char$Duration)
-    VolPeek_<- as.numeric(df_char$Volume)
-    TempPeek_<- as.numeric(df_char$Temperature)
-    dfpeek_c<-cbind(HeightPeek_,TimePeek_,VolPeek_,TempPeek_)
-    colnames(dfpeek_c)<-c("HeightPeek","TimePeek","VolPeek","TempPeek")
-    dfpeek_c <- as.data.frame(dfpeek_c) %>%
+    HeightPEEK_<- as.numeric(df_char$Height)
+    TimePEEK_<- as.numeric(df_char$Duration)
+    VolPEEK_<- as.numeric(df_char$Volume)
+    TempPEEK_<- as.numeric(df_char$Temperature)
+    dfPEEK_c<-cbind(HeightPEEK_,TimePEEK_,VolPEEK_,TempPEEK_)
+    colnames(dfPEEK_c)<-c("HeightPEEK","TimePEEK","VolPEEK","TempPEEK")
+    dfPEEK_c <- as.data.frame(dfPEEK_c) %>%
       na.omit()
 
-    dfpeek$dfpeek_chg <- dfpeek_c %>% 
-      mutate(TIME_H=TimePeek/3600, #time (h)
-             FLUX=VolPeek/1000/TIME_H,
-             FLUX_KGS=VolPeek/1000/TimePeek,#flux (kg/s)
-             PRESSURE_PA=1000*9.81*HeightPeek, #pressure (Pa)
+    dfPEEK$dfPEEK_chg <- dfPEEK_c %>% 
+      mutate(TIME_H=TimePEEK/3600, #time (h)
+             FLUX=VolPEEK/1000/TIME_H,
+             FLUX_KGS=VolPEEK/1000/TimePEEK,#flux (kg/s)
+             PRESSURE_PA=1000*9.81*HeightPEEK, #pressure (Pa)
              PRESSURE_MPA=PRESSURE_PA/1000000, #pressure (MPa)
-             K=VolPeek/1000/TimePeek/PRESSURE_MPA, #hydraulic conductance(kg s-1 MPa-1)
-             N=VolPeek/18*1000, # N (mmol)
-             FLUX_MMOLS=N/TimePeek) # Flux (mmol s-1)
+             K=VolPEEK/1000/TimePEEK/PRESSURE_MPA, #hydraulic conductance(kg s-1 MPa-1)
+             N=VolPEEK/18*1000, # N (mmol)
+             FLUX_MMOLS=N/TimePEEK) # Flux (mmol s-1)
 
-    shinyjs::reset("HeightPeek")
-    shinyjs::reset("TimePeek")
-    shinyjs::reset("VolPeek")
-    shinyjs::reset("TempPeek")
+    shinyjs::reset("HeightPEEK")
+    shinyjs::reset("TimePEEK")
+    shinyjs::reset("VolPEEK")
+    shinyjs::reset("TempPEEK")
     
-    observeEvent(input$tablepeek_cell_edit, {
-      rv$df[input$tablepeek_cell_edit$row,input$tablepeek_cell_edit$col] <<- (DT::coerceValue(input$tablepeek_cell_edit$value, rv$df[input$tablepeek_cell_edit$row,input$tablepeek_cell_edit$col]))
+    observeEvent(input$tablePEEK_cell_edit, {
+      rv$df[input$tablePEEK_cell_edit$row,input$tablePEEK_cell_edit$col] <<- (DT::coerceValue(input$tablePEEK_cell_edit$value, rv$df[input$tablePEEK_cell_edit$row,input$tablePEEK_cell_edit$col]))
       rv$df %>%
         na.omit()
       df_char<-rv$df
       print("numeric")
-      HeightPeek_<- as.numeric(df_char$Height)
-      TimePeek_<- as.numeric(df_char$Duration)
-      VolPeek_<- as.numeric(df_char$Volume)
-      TempPeek_<- as.numeric(df_char$Temperature)
-      dfpeek_c<-cbind(HeightPeek_,TimePeek_,VolPeek_,TempPeek_)
-      colnames(dfpeek_c)<-c("HeightPeek","TimePeek","VolPeek","TempPeek")
-      dfpeek_c <- as.data.frame(dfpeek_c) %>%
+      HeightPEEK_<- as.numeric(df_char$Height)
+      TimePEEK_<- as.numeric(df_char$Duration)
+      VolPEEK_<- as.numeric(df_char$Volume)
+      TempPEEK_<- as.numeric(df_char$Temperature)
+      dfPEEK_c<-cbind(HeightPEEK_,TimePEEK_,VolPEEK_,TempPEEK_)
+      colnames(dfPEEK_c)<-c("HeightPEEK","TimePEEK","VolPEEK","TempPEEK")
+      dfPEEK_c <- as.data.frame(dfPEEK_c) %>%
         na.omit()
       
-      dfpeek$dfpeek_chg <- dfpeek_c %>% 
-        mutate(TIME_H=TimePeek/3600, #time (h)
-               FLUX=VolPeek/1000/TIME_H,
-               FLUX_KGS=VolPeek/1000/TimePeek,#flux (kg/s)
-               PRESSURE_PA=1000*9.81*HeightPeek, #pressure (Pa)
+      dfPEEK$dfPEEK_chg <- dfPEEK_c %>% 
+        mutate(TIME_H=TimePEEK/3600, #time (h)
+               FLUX=VolPEEK/1000/TIME_H,
+               FLUX_KGS=VolPEEK/1000/TimePEEK,#flux (kg/s)
+               PRESSURE_PA=1000*9.81*HeightPEEK, #pressure (Pa)
                PRESSURE_MPA=PRESSURE_PA/1000000, #pressure (MPa)
-               K=VolPeek/1000/TimePeek/PRESSURE_MPA, #hydraulic conductance(kg s-1 MPa-1)
-               N=VolPeek/18*1000, # N (mmol)
-               FLUX_MMOLS=N/TimePeek) # Flux (mmol s-1)
+               K=VolPEEK/1000/TimePEEK/PRESSURE_MPA, #hydraulic conductance(kg s-1 MPa-1)
+               N=VolPEEK/18*1000, # N (mmol)
+               FLUX_MMOLS=N/TimePEEK) # Flux (mmol s-1)
       
-      write.csv(rv$df, paste0("OUTPUTS/PEEK/measurement/",input$IDMEASUREMENT1,"_peekmeasurement.csv"), row.names=FALSE)
+      write.csv(rv$df, paste0("OUTPUTS/PEEK/measurement/",input$IDMEASUREMENT1,"_PEEKmeasurement.csv"), row.names=FALSE)
       
     })
 
     
     output$txtOutputp1<- renderText({
-      paste0("Peek-tube resistance at 25°C (MPa mmol<sup>-1</sup> s<sup>-1</sup>), R_25=",dfresults$R_25)
+      paste0("PEEK tubing resistance at 25°C (MPammol<sup>-1</sup> s<sup>-1</sup>), R_25=",dfresults$R_25)
     })
     output$txtOutputp2<- renderText({
-      paste0("Peek-tube conductivity at 25°C (kg s<sup>-1</sup> MPa<sup>-1</sup>), K_25=",dfresults$K_25)
+      paste0("PEEK tubing conductivity at 25°C (kg s<sup>-1</sup> MPa<sup>-1</sup>), K_25=",dfresults$K_25)
     })
     
     output$hist2P<-renderPlot({
       # Calcul de la pente de la relation linéaire de l'évolution du flux en mmol.s-1 avec la pression
-      model <- lm(FLUX_MMOLS~PRESSURE_MPA, dfpeek$dfpeek_chg)
+      model <- lm(FLUX_MMOLS~PRESSURE_MPA, dfPEEK$dfPEEK_chg)
       slopeP <- model$coefficients[2]
-      print(dfpeek$dfpeek_chg)
+      print(dfPEEK$dfPEEK_chg)
       # Calcul de la résistance 
-      Temperature <- mean(dfpeek$dfpeek_chg$TempPeek, na.rm = TRUE)
+      Temperature <- mean(dfPEEK$dfPEEK_chg$TempPEEK, na.rm = TRUE)
       print(Temperature)
       R=1/slopeP
       R_25=0.88862/(10^((1.3272*(20-Temperature)-0.001053*(20-Temperature)^2)/(Temperature+105)))*R
       dfresults$R_25=R_25[[1]]
       
-      # Calcul de la conductance hydraulique du peek tube 
-      Temperature <- mean(dfpeek$dfpeek_chg$TempPeek, na.rm = TRUE)
-      model.2 <- lm(FLUX_KGS~PRESSURE_MPA, dfpeek$dfpeek_chg)
+      # Calcul de la conductance hydraulique du PEEK tubing 
+      Temperature <- mean(dfPEEK$dfPEEK_chg$TempPEEK, na.rm = TRUE)
+      model.2 <- lm(FLUX_KGS~PRESSURE_MPA, dfPEEK$dfPEEK_chg)
       pente.2 <- model.2$coefficients[2]
       summary(model.2)$adj.r.squared
       
@@ -239,16 +239,16 @@ server <- function(input, output, session) {
         color="darkgreen"
       }  
 
-      ggplot(dfpeek$dfpeek_chg, aes(PRESSURE_MPA, FLUX_KGS)) + geom_point() +  geom_smooth(method=lm) + geom_text(data=annotations2,color=color, aes(x=xpos,y=ypos,hjust=hjustvar,vjust=vjustvar,label=annotateText))+
+      ggplot(dfPEEK$dfPEEK_chg, aes(PRESSURE_MPA, FLUX_KGS)) + geom_point() +  geom_smooth(method=lm) + geom_text(data=annotations2,color=color, aes(x=xpos,y=ypos,hjust=hjustvar,vjust=vjustvar,label=annotateText))+
         xlab("Pressure (MPa)") + ylab(expression(paste("Flow (mmol ", s^{-1}, ")"))) + theme(text = element_text(size = 15))
       
     }) #renderPlot
-    write.csv(rv$df, paste0("OUTPUTS/PEEK/measurement/",input$IDMEASUREMENT1,"_peekmeasurement.csv"), row.names=FALSE)
+    write.csv(rv$df, paste0("OUTPUTS/PEEK/measurement/",input$IDMEASUREMENT1,"_PEEKmeasurement.csv"), row.names=FALSE)
     
 
   }) #observeEventAdd
   
-  output$tablepeek<-DT::renderDT({
+  output$tablePEEK<-DT::renderDT({
     if (!is.null(dim(rv$df))) {
       if (dim(rv$df)[1]>=1) {
         essai<-rv$df %>%
@@ -261,7 +261,7 @@ server <- function(input, output, session) {
                       escape   = FALSE,
                       caption = htmltools::tags$caption("Data overview", style="color:blue")) 
       }}
-  }) #tablepeek
+  }) #tablePEEK
 
   print("add2")  
   observeEvent(input$Add2, {
@@ -269,14 +269,14 @@ server <- function(input, output, session) {
     validate(
       need(input$PARAMETER1 != "", 'Please choose a state.'),
       need(input$OPERATOR != "", 'Please choose a state.'),
-      need(input$Peek_tube_ID != "", 'Please choose a state.'),
+      need(input$PEEK_tubing_ID != "", 'Please choose a state.'),
       need(input$DEVICE != "", 'Please choose a state.')    
     )
 
     rv4$df4 <- rbind(rv4$df4, data.frame(
       PARAMETER1 = input$PARAMETER1,
       OPERATOR = input$OPERATOR,
-      Peek_tube_ID = input$Peek_tube_ID,
+      PEEK_tubing_ID = input$PEEK_tubing_ID,
       DEVICE = input$DEVICE,
       K_25 =  dfresults$K_25,
       R_25 = dfresults$R_25
@@ -284,72 +284,72 @@ server <- function(input, output, session) {
     
   })
 
-  output$tablepeekR<-renderText({paste0("R_25=",dfresults$R_25)}) #tablepeekR
-  output$tablepeekK<-renderText({paste0("K_25=",dfresults$K_25)}) #tablepeekK
-  output$tablepeekid<-DT::renderDT({
+  output$tablePEEKR<-renderText({paste0("R_25=",dfresults$R_25)}) #tablePEEKR
+  output$tablePEEKK<-renderText({paste0("K_25=",dfresults$K_25)}) #tablePEEKK
+  output$tablePEEKid<-DT::renderDT({
     DT::datatable(rv4$df4, 
-                  colnames = c('Parameter 1', 'Operator', 'Peek-tube ID', 'Device', 'K_25', 'R_25'),
+                  colnames = c('Parameter 1', 'Operator', 'PEEK tubing ID', 'Device', 'K_25', 'R_25'),
                   options = list(dom = 't'),
                   editable = FALSE,
                   escape   = FALSE,
                   caption = htmltools::tags$caption("Data overview", style="color:blue")
     ) 
-  }) #tablepeekid
+  }) #tablePEEKid
   
   
   ####### DOWNLOAD BUTTON downloadDataT1
   observeEvent(input$generateButton, {
-    write.csv(rv4$df4, paste0("OUTPUTS/PEEK/id/",input$nomid,"_peekid.csv"), row.names=FALSE)
+    write.csv(rv4$df4, paste0("OUTPUTS/PEEK/id/",input$nomid,"_PEEKid.csv"), row.names=FALSE)
   })
   
   observeEvent(input$Add5, {
       data_all1 <-NULL
       data_all2 <-NULL
       folderPC5id_<-substr(as.character(file_input())[1],47,1000000L)
-      x2<-unlist(gregexpr(pattern ='_peekid.csv',folderPC5id_))
+      x2<-unlist(gregexpr(pattern ='_PEEKid.csv',folderPC5id_))
       namefile5id=substr(folderPC5id_,1,x2[1]-1)
       
       folderPC5_<-substr(as.character(file_input1())[1],38,1000000L)
-      x2<-unlist(gregexpr(pattern ='_peek.csv',folderPC5_))
+      x2<-unlist(gregexpr(pattern ='_PEEK.csv',folderPC5_))
       namefile5=substr(folderPC5_,1,x2[1]-1)
       
-      if (file.exists(paste0("OUTPUTS/PEEK/id/",namefile5id,"_peekid.csv"))) {
-        data_all1 <- read.csv(paste0("OUTPUTS/PEEK/id/",namefile5id,"_peekid.csv"))
+      if (file.exists(paste0("OUTPUTS/PEEK/id/",namefile5id,"_PEEKid.csv"))) {
+        data_all1 <- read.csv(paste0("OUTPUTS/PEEK/id/",namefile5id,"_PEEKid.csv"))
       }
       data_all1$K_25_<- as.numeric(data_all1$K_25)
       data_all1$R_25_<- as.numeric(data_all1$R_25)
-      data_all1$Peek_tube_ID<-data_all1$Peek_tube_ID
+      data_all1$PEEK_tubing_ID<-data_all1$PEEK_tubing_ID
       
       if (!is.null(dim(data_all1))) {
         data_mean1 <- data_all1 %>% 
-          group_by(Peek_tube_ID) %>% 
+          group_by(PEEK_tubing_ID) %>% 
           summarise(R_25_mean=mean(R_25_), R_25_sd=sd(R_25_), n=n(), R_25_se=R_25_sd/sqrt(n),
                     K_25_mean=mean(K_25_), K_25_sd=sd(K_25_), K_25_se=K_25_sd/sqrt(n))
         
-        if (file.exists(paste0("www/color/",namefile5,"_peek.csv"))) {
-          data_all2 <- read.csv(paste0("www/color/",namefile5,"_peek.csv"))
+        if (file.exists(paste0("www/color/",namefile5,"_PEEK.csv"))) {
+          data_all2 <- read.csv(paste0("www/color/",namefile5,"_PEEK.csv"))
         }
         data_mean <- as.data.frame(rbind(data_mean1,data_all2))
       }
-      output$tablepeektub<-DT::renderDT({
+      output$tablePEEKtub<-DT::renderDT({
         DT::datatable(data_mean, 
                       options = list(dom = 't'),
                       rownames= FALSE,
                       caption = htmltools::tags$caption("Data overview", style="color:blue")) 
-      }) #tablepeektub      
+      }) #tablePEEKtub      
     
     observeEvent(input$generateButton5, {
-      write.csv(data_mean, paste0("www/color/",input$nomid5,"_peek.csv"), row.names=FALSE)
+      write.csv(data_mean, paste0("www/color/",input$nomid5,"_PEEK.csv"), row.names=FALSE)
     })      
   }) #add5
 
   #resultats SingleKmeasurement
-  observeEvent(input$resetAllpeek, {
+  observeEvent(input$resetAllPEEK, {
     shinyjs::reset("myappm1")
     output$rawInputValue42 <- DT::renderDataTable({})
     output$rawInputValue41 <- DT::renderDataTable({})
     rv$df<-NULL
-    dfpeek$dfpeek_chg<-NULL
+    dfPEEK$dfPEEK_chg<-NULL
     dfresults$R_25<-NULL
     dfresults$K_25<-NULL
     rv4$df4<-NULL
@@ -579,19 +579,19 @@ output$rawInputValue2 <- renderText({name_file})
 })
 
 observe({
-print("CALIBRATION peek")
-shinyFileChoose(input, 'folderPTm', roots=c(wd='.'), defaultPath="www/color", pattern="_peek", filetypes=c('csv'))
+print("CALIBRATION PEEK")
+shinyFileChoose(input, 'folderPTm', roots=c(wd='.'), defaultPath="www/color", pattern="_PEEK", filetypes=c('csv'))
 folderPTm<-substr(as.character(input$folderPTm)[1],38,1000000L)
 print(folderPTm)
-x2<-unlist(gregexpr(pattern ='_peek.csv',folderPTm))
+x2<-unlist(gregexpr(pattern ='_PEEK.csv',folderPTm))
 namefile2=substr(folderPTm,1,x2[1]-1)
 print(namefile2)#### 
 
-if (file.exists(paste0("www/color/",namefile2,"_peek.csv"))) {
-output$rawInputValue1 <- renderText(paste0(namefile2,"_peek.csv"))
-peek_coeff <- read.csv(paste0("www/color/",namefile2,"_peek.csv"))
-choiceList <- peek_coeff[, 1]
-updateSelectInput(session, "peek_sel", label = "Peek-tube ID", choices = choiceList, selected = '')
+if (file.exists(paste0("www/color/",namefile2,"_PEEK.csv"))) {
+output$rawInputValue1 <- renderText(paste0(namefile2,"_PEEK.csv"))
+PEEK_coeff <- read.csv(paste0("www/color/",namefile2,"_PEEK.csv"))
+choiceList <- PEEK_coeff[, 1]
+updateSelectInput(session, "PEEK_sel", label = "PEEK tubing ID", choices = choiceList, selected = '')
 }
 
 parm1_choice <- read.csv(paste0("www/parm1_choice.csv"),header = FALSE)
@@ -613,10 +613,10 @@ data_meanm =data.frame("Step", "n", "P1_mean", "P1_sd", "P1_CV","P2_mean","P2_sd
  "P1bar_mean", "P1bar_sd", "P1bar_CV","P2bar_mean", "P2bar_sd", "P2bar_CV",
  "Diffbar_mean", "Diffbar_sd", "Diffbar_CV",
  "k_rough_mean","k_rough_sd","k_rough_CV",
- "ValidPeekChoice",
+ "ValidPEEKChoice",
  "p1_300_mean","p1_300_sd","p1_300_CV",
  "p2_300_mean","p2_300_sd","p2_300_CV",
- "ValidPeekChoice2",
+ "ValidPEEKChoice2",
  "k_300_rough_mean","k_300_rough_sd","k_300_rough_CV",
  "p3_min","t1_mean","t2_mean","t3_mean","ELTime2_max"
 )
@@ -624,7 +624,7 @@ data_meanm =data.frame("Step", "n", "P1_mean", "P1_sd", "P1_CV","P2_mean","P2_sd
 observeEvent(input$recalcm,{
 cat("--Validate \n")
  validate(
- need(input$peek_sel != 'No choices yet', 'Please choose a state.'),
+ need(input$PEEK_sel != 'No choices yet', 'Please choose a state.'),
  need(input$parm1 != "No choices yet", 'Please choose a state.'),
  need(input$parm2 != "No choices yet", 'Please choose a state.'),
  need(input$parm3 != "No choices yet", 'Please choose a state.'),
@@ -649,8 +649,8 @@ df_tablem <- subset(df_tablem, P1.psi!="Inf")
 df_tablem <- subset(df_tablem, P2.psi!="Inf")
 }
 
-INPUT <- data.frame (first_column= c("parm1","parm2","parm3","parm4","parm5","parm6","parm7","folder Preasure Sersors Calibration","folder PEEKtubeCalibration","color","Stemdiameter1","Stemdiameter2","Stemlength","Comments","parm8","T1_oC","T2_oC"),
- second_column= c(input$parm1,input$parm2,input$parm3,input$parm4,input$parm5,input$parm6,as.character(zoo::as.Date(as.numeric(input$parm7))),substr(as.character(input$folderPSm)[1],48,1000000L),substr(as.character(input$folderPTm)[1],38,1000000L),input$peek_sel,input$Stemdiameter1,input$Stemdiameter2,input$Stemlength,input$Comments,input$parm8,input$T1_oC,input$T2_oC))
+INPUT <- data.frame (first_column= c("parm1","parm2","parm3","parm4","parm5","parm6","parm7","folder Preasure Sersors Calibration","folder PEEK tubing Calibration","color","Stemdiameter1","Stemdiameter2","Stemlength","Comments","parm8","T1_oC","T2_oC"),
+ second_column= c(input$parm1,input$parm2,input$parm3,input$parm4,input$parm5,input$parm6,as.character(zoo::as.Date(as.numeric(input$parm7))),substr(as.character(input$folderPSm)[1],48,1000000L),substr(as.character(input$folderPTm)[1],38,1000000L),input$PEEK_sel,input$Stemdiameter1,input$Stemdiameter2,input$Stemlength,input$Comments,input$parm8,input$T1_oC,input$T2_oC))
 write.csv(INPUT, paste0("OUTPUTS/SINGLE/",input$parm1,"/",input$parm8,"/",input$parm1,"_",input$parm2,"_",input$parm3,"_",input$parm4,"_",input$parm5,"_",input$parm6,"_",input$parm7,"_INPUT.csv"),row.names=FALSE)
 
 folderPSm<-substr(as.character(input$folderPSm)[1],48,1000000L)
@@ -663,16 +663,16 @@ colnames(data_coeff)<-c("Variable","P1 calibration","P2 calibration")
 write.csv(data_coeff, paste0("OUTPUTS/SINGLE/",input$parm1,"/",input$parm8,"/",input$parm1,"_",input$parm2,"_",input$parm3,"_",input$parm4,"_",input$parm5,"_",input$parm6,"_",input$parm7,"_COEFF.csv"),row.names=FALSE)
 
 folderPTm<-substr(as.character(input$folderPTm)[1],38,1000000L)
-x2<-unlist(gregexpr(pattern ='_peek.csv',folderPTm))
+x2<-unlist(gregexpr(pattern ='_PEEK.csv',folderPTm))
 namefile2=paste0(substr(folderPTm,1,x2[1]-1))
 print(namefile2)
-peek_coeff <- read.csv(paste0("www/color/",namefile2,"_peek.csv"))
-Res_PEEK<-base::subset(peek_coeff,Peek_tube_ID==input$peek_sel)[[2]]
-peek <- data.frame (first_column= c("Peek-tube ID (from PEEKtubeCalibration Tab)", 
-"Resistance of choosen PEEK tubing at 25 oC (MPa mmol-1 s)"),
-second_column = c(input$peek_sel, Res_PEEK)
+PEEK_coeff <- read.csv(paste0("www/color/",namefile2,"_PEEK.csv"))
+Res_PEEK<-base::subset(PEEK_coeff,PEEK_tubing_ID==input$PEEK_sel)[[2]]
+PEEK <- data.frame (first_column= c("PEEK tubing ID (from PEEK tubing calibration Tab)", 
+"Resistance of chosen PEEK tubing at 25 oC (MPa mmol-1 s)"),
+second_column = c(input$PEEK_sel, Res_PEEK)
 )
-write.csv(peek, paste0("OUTPUTS/SINGLE/",input$parm1,"/",input$parm8,"/",input$parm1,"_",input$parm2,"_",input$parm3,"_",input$parm4,"_",input$parm5,"_",input$parm6,"_",input$parm7,"_PEEK.csv"),row.names=FALSE)
+write.csv(PEEK, paste0("OUTPUTS/SINGLE/",input$parm1,"/",input$parm8,"/",input$parm1,"_",input$parm2,"_",input$parm3,"_",input$parm4,"_",input$parm5,"_",input$parm6,"_",input$parm7,"_PEEK.csv"),row.names=FALSE)
 
 z<-df_tablem
 z$t1_meanx=as.numeric(input$T1_oC)
@@ -706,10 +706,10 @@ P1bar_mean=mean(P1bar), P1bar_sd=sd(P1bar), P1bar_CV=P1bar_sd/P1bar_mean,
 P2bar_mean=mean(P2bar), P2bar_sd=sd(P2bar), P2bar_CV=P2bar_sd/P2bar_mean,
 Diffbar_mean=mean(Diffbar), Diffbar_sd=sd(Diffbar), Diffbar_CV=Diffbar_sd/Diffbar_mean,
 k_rough_mean=mean(k_rough),k_rough_sd=sd(k_rough), k_rough_CV=k_rough_sd/k_rough_mean,
-ValidPeekChoice=P2bar_mean/P1bar_mean,
+ValidPEEKChoice=P2bar_mean/P1bar_mean,
 p1_300_mean=mean(P1bar*condition_1,na.rm=TRUE),p1_300_sd=sd(P1bar*condition_1,na.rm=TRUE), p1_300_CV=p1_300_sd/p1_300_mean,
 p2_300_mean=mean(P2bar*condition_1,na.rm=TRUE),p2_300_sd=sd(P2bar*condition_1,na.rm=TRUE), p2_300_CV=p2_300_sd/p2_300_mean,
-ValidPeekChoice2=p2_300_mean/p1_300_mean,
+ValidPEEKChoice2=p2_300_mean/p1_300_mean,
 k_300_rough_mean=mean(k_300_rough,na.rm=TRUE),k_300_rough_sd=sd(k_300_rough,na.rm=TRUE), k_300_rough_CV=k_300_rough_sd/k_300_rough_mean,
 p3_min=min(P2bar),
 t1_mean=mean(t1_meanx),t2_mean=mean(t2_meanx),t3_mean=mean(T3_oC),
@@ -757,11 +757,11 @@ options = list(dom = "ft",ordering=F,
 
 output$table2m <- DT::renderDataTable({
 datatable(
-peek,
-colnames = rep("", ncol(peek)),
+PEEK,
+colnames = rep("", ncol(PEEK)),
 caption = htmltools::tags$caption(
 style = 'text-align: left; color:blue',
-'Constant for peek-tube'
+'Constant for PEEK tubing'
 ),
 options = list(dom = "ft",ordering=F,
  pageLength = 10000,
@@ -770,7 +770,7 @@ options = list(dom = "ft",ordering=F,
 
 result1 <- data.frame (first_column= c("","","Step 1","","","","Step 2","","","","","","Step 3","","","","","","","","","",""),
  second_column = c("",
- "Peek-tube range",
+ "PEEK tubing range",
  "Validate pressure sensors output (±?) and recalibrate if needed",
  "Presure sensor validation P1 (bar)",
  "Presure sensor validation P2 (bar)",
@@ -792,7 +792,7 @@ result1 <- data.frame (first_column= c("","","Step 1","","","","Step 2","","",""
  "K at 25 oC and corrected for P3 (kg s-1 Mpa-1)"
  ),
  third_column = c("Total",
-data_meanm$ValidPeekChoice[2],
+data_meanm$ValidPEEKChoice[2],
 "",
 data_meanm$P1bar_mean[1],
 data_meanm$P2bar_mean[1],
@@ -813,7 +813,7 @@ data_meanm$t3_mean[3],"",
 ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))),
  
  fourth_column = c("Last 300 s",
- data_meanm$ValidPeekChoice2[2],"","","","","",
+ data_meanm$ValidPEEKChoice2[2],"","","","","",
  data_meanm$p1_300_mean[2],data_meanm$p2_300_mean[2],
  ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/Res_PEEK)/data_meanm$p2_300_mean[2],
  ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/Res_PEEK)/data_meanm$p2_300_mean[2]*18/1000000,
@@ -853,21 +853,21 @@ second_column= c(
 "Conductivity [K] (kg s-1 MPa m)",
 "Stem area-specific conductivity [Ks] (kg s-1 MPa m-1)",
 "Pressure sensors validation (1/1000 maximum variation)",
-"Validation for optimal peek tube choice",
+"Validation for optimal PEEK tubing choice",
 "Time (min 300 sec.)",
 "Stability (CV < 0.05)"),
 third_column= c("Total", 
 ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000),
 ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi)), 
 base::ifelse((abs(data_meanm$P1bar_mean[1]-data_meanm$P2bar_mean[1])<0.001), "OK", "RECALIBRATE"),
-base::ifelse((data_meanm$ValidPeekChoice[2]>0.2 & data_meanm$ValidPeekChoice[2]<0.8), "OK", "?"),
+base::ifelse((data_meanm$ValidPEEKChoice[2]>0.2 & data_meanm$ValidPEEKChoice[2]<0.8), "OK", "?"),
 "",
 ""),
 fourth_column= c("Last 300 s", 
  ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000),
  ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi)), 
  base::ifelse((abs(data_meanm$P1bar_mean[1]-data_meanm$P2bar_mean[1])<0.001), "OK", "RECALIBRATE"),
- base::ifelse((data_meanm$ValidPeekChoice2[2]>0.2 & data_meanm$ValidPeekChoice2[2]<0.8), "OK", "?"),
+ base::ifelse((data_meanm$ValidPEEKChoice2[2]>0.2 & data_meanm$ValidPEEKChoice2[2]<0.8), "OK", "?"),
  base::ifelse(data_meanm$ELTime2_max[2]<294,"WAIT","OK"),
  base::ifelse(data_meanm$k_300_rough_CV[2]<0.05,"OK","WAIT"))
 )
@@ -1030,11 +1030,11 @@ print(paste0(namefile2, namefile,"_ARDUINO.csv"))
 
 arduino<-read.csv(paste0(namefile2, namefile,"_ARDUINO.csv"))
 data_coeff<-read.csv(paste0(namefile2,namefile,"_COEFF.csv"))
-peek<-read.csv(paste0(namefile2,namefile,"_PEEK.csv"))
+PEEK<-read.csv(paste0(namefile2,namefile,"_PEEK.csv"))
 result1<-read.csv(paste0(namefile2,namefile,"_STEP.csv"))
 result<-read.csv(paste0(namefile2, namefile,"_RESULTS.csv"))
 INPUT<-read.csv(paste0(namefile2, namefile,"_INPUT.csv"))
-Res_PEEK<-peek$second_column[2]
+Res_PEEK<-PEEK$second_column[2]
 
 rvw2$intrantw <- INPUT
 
@@ -1050,10 +1050,10 @@ rvw2$intrantw <- INPUT
  mutate(P1bar=data_coeff$P1[2]+data_coeff$P1[3]*P1.psi,
 P2bar=data_coeff$P2[2]+data_coeff$P2[3]*P2.psi,
 Diffbar=abs(P1bar-P2bar),
-k_rough=((P1bar-P2bar)/as.numeric(peek$second_column[2]))/P2bar,
+k_rough=((P1bar-P2bar)/as.numeric(PEEK$second_column[2]))/P2bar,
 ELTime2=ELTimemax-ELTime,
 condition_1 = na_if(1*((ELTimemax-ELTime)<300),0),
-k_300_rough=((P1bar*condition_1-P2bar*condition_1)/as.numeric(peek$second_column[2]))/P2bar*condition_1,
+k_300_rough=((P1bar*condition_1-P2bar*condition_1)/as.numeric(PEEK$second_column[2]))/P2bar*condition_1,
 Pithdiameter=0
  )
  zdf1 <- z
@@ -1101,11 +1101,11 @@ options = list(dom = "ft",ordering=F,
 
 output$table2mL <- DT::renderDataTable({
 datatable(
-peek,
-colnames = rep("", ncol(peek)),
+PEEK,
+colnames = rep("", ncol(PEEK)),
 caption = htmltools::tags$caption(
 style = 'text-align: left; color:blue',
-'Constant for peek-tube'
+'Constant for PEEK tubing'
 ),
 options = list(dom = "ft",ordering=F,
  pageLength = 10000,
@@ -1239,7 +1239,7 @@ observeEvent(input$renamedata, {
   intrantx<-rvw2$intrantw
   arduinox<-read.csv(paste0(namefile2, namefile,"_ARDUINO.csv"))
   data_coeffx<-read.csv(paste0(namefile2,namefile,"_COEFF.csv"))
-  peekx<-read.csv(paste0(namefile2,namefile,"_PEEK.csv"))
+  PEEKx<-read.csv(paste0(namefile2,namefile,"_PEEK.csv"))
   result1x<-read.csv(paste0(namefile2,namefile,"_STEP.csv"))
   resultx<-read.csv(paste0(namefile2, namefile,"_RESULTS.csv"))
   
@@ -1260,7 +1260,7 @@ observeEvent(input$renamedata, {
   write.csv(intrantx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm8,"/",parm1,"_",parm2,"_",parm3,"_",parm4,"_",parm5,"_",parm6,"_",parm7,"_INPUT.csv"),  row.names=FALSE)
   write.csv(arduinox, paste0("OUTPUTS/SINGLE/", parm1,"/",parm8,"/",parm1,"_",parm2,"_",parm3,"_",parm4,"_",parm5,"_",parm6,"_",parm7,"_ARDUINO.csv"),  row.names=FALSE)
   write.csv(data_coeffx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm8,"/",parm1,"_",parm2,"_",parm3,"_",parm4,"_",parm5,"_",parm6,"_",parm7,"_COEFF.csv"),  row.names=FALSE)
-  write.csv(peekx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm8,"/",parm1,"_",parm2,"_",parm3,"_",parm4,"_",parm5,"_",parm6,"_",parm7,"_PEEK.csv"),  row.names=FALSE)
+  write.csv(PEEKx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm8,"/",parm1,"_",parm2,"_",parm3,"_",parm4,"_",parm5,"_",parm6,"_",parm7,"_PEEK.csv"),  row.names=FALSE)
   write.csv(result1x, paste0("OUTPUTS/SINGLE/", parm1,"/",parm8,"/",parm1,"_",parm2,"_",parm3,"_",parm4,"_",parm5,"_",parm6,"_",parm7,"_STEP.csv"),  row.names=FALSE)
   write.csv(resultx, paste0("OUTPUTS/SINGLE/", parm1,"/",parm8,"/",parm1,"_",parm2,"_",parm3,"_",parm4,"_",parm5,"_",parm6,"_",parm7,"_RESULTS.csv"),  row.names=FALSE)
   
@@ -1300,9 +1300,9 @@ readfiles=character())
 print("DB")
 DB<-data.frame(matrix(ncol = 38, nrow = 0))
 x <- c("file","parm1","parm2","parm3","parm4","parm5","parm6","parm7","parm8",
- "VALIDPEEKCHOICE",	"VALID_PEEK_TUBE",	"VALID_PSENSOR",	"TIME",	"STABILITY",	
- "SLOPE_P1","INTERCEPT_P1","SLOPE_P2","INTERCEPT_P2","PEEKTUBE_ID","R_PEEKTUBE_25",
- "P1","P2","P3","K_BRUT_MMOL","K_BRUT_KG","CV_K","T1","T2","T_AVG","R_PEEKTUBE_T",
+ "VALIDPEEKCHOICE",	"VALID_PEEK_TUBING",	"VALID_PSENSOR",	"TIME",	"STABILITY",	
+ "SLOPE_P1","INTERCEPT_P1","SLOPE_P2","INTERCEPT_P2","PEEK_TUBING_ID","R_PEEK_TUBING_25",
+ "P1","P2","P3","K_BRUT_MMOL","K_BRUT_KG","CV_K","T1","T2","T_AVG","R_PEEK_TUBING_T",
  "T3","K_T","K_25","STEMDIAMETER_AVG","AS","STEMLENGTH","KS","COMMENTS")
 colnames(DB) <- x
 
@@ -1370,7 +1370,7 @@ if(grepl('-', INPUT[7,2])==T){parm7<-	as.character(INPUT[7,2])}
 if(grepl('-', INPUT[7,2])==F){parm7<-	as.character(zoo::as.Date(as.numeric(INPUT[7,2])))}
 parm8<-	INPUT[15,2]
 VALIDPEEKCHOICE<-	STEP[2,4]	
-VALID_PEEK_TUBE<-	RESULTS[4,4]
+VALID_PEEK_TUBING<-	RESULTS[4,4]
 VALID_PSENSOR<-	RESULTS[5,4]	
 TIME<-	RESULTS[6,4]	
 STABILITY<-	RESULTS[7,4]
@@ -1378,8 +1378,8 @@ SLOPE_P1<-	COEFF[3,2]
 INTERCEPT_P1<-	COEFF[2,2]
 SLOPE_P2<-	COEFF[3,3]
 INTERCEPT_P2<-	COEFF[2,3]
-PEEKTUBE_ID<-PEEK[1,2]
-R_PEEKTUBE_25<-	PEEK[2,2]
+PEEK_TUBING_ID<-PEEK[1,2]
+R_PEEK_TUBING_25<-	PEEK[2,2]
 P1<-	STEP[8,4]
 P2<-	STEP[9,4]
 P3<-	STEP[14,4]	
@@ -1389,7 +1389,7 @@ CV_K<-	STEP[12,4]
 T1<-	STEP[15,4]#	
 T2<-	STEP[16,4]
 T_AVG<-	STEP[17,4]	#
-R_PEEKTUBE_T<-	STEP[18,4] #
+R_PEEK_TUBING_T<-	STEP[18,4] #
 T3<-	STEP[20,4] #
 K_T<-	STEP[22,4] #
 K_25<-	STEP[23,4] #
@@ -1399,9 +1399,9 @@ STEMLENGTH<- INPUT[13,2]
 KS<- RESULTS[3,4] #
 COMMENTS<-	INPUT[14,2]
 
-file_res<-as.data.frame(cbind(file,parm1,parm2,parm3,parm4,parm5,parm6,parm7,parm8,VALIDPEEKCHOICE,VALID_PEEK_TUBE,
-                              VALID_PSENSOR,TIME,STABILITY,SLOPE_P1,INTERCEPT_P1,SLOPE_P2,INTERCEPT_P2,PEEKTUBE_ID,
-                              R_PEEKTUBE_25,P1,P2,P3,K_BRUT_MMOL,K_BRUT_KG,CV_K,T1,T2,T_AVG,R_PEEKTUBE_T,T3,K_T,K_25,
+file_res<-as.data.frame(cbind(file,parm1,parm2,parm3,parm4,parm5,parm6,parm7,parm8,VALIDPEEKCHOICE,VALID_PEEK_TUBING,
+                              VALID_PSENSOR,TIME,STABILITY,SLOPE_P1,INTERCEPT_P1,SLOPE_P2,INTERCEPT_P2,PEEK_TUBING_ID,
+                              R_PEEK_TUBING_25,P1,P2,P3,K_BRUT_MMOL,K_BRUT_KG,CV_K,T1,T2,T_AVG,R_PEEK_TUBING_T,T3,K_T,K_25,
                               STEMDIAMETER_AVG,AS,STEMLENGTH,KS,COMMENTS))
 
 DB<-plyr::rbind.fill(DB,file_res)
