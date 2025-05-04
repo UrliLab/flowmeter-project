@@ -1,8 +1,0 @@
-"first_column","second_column","third_column","fourth_column"
-"Overview","Global Results","Total","Last 300 s"
-"","Conductivity [K] (kg s-1 MPa m)","4.17382119238403e-06","4.1779386474454e-06"
-"","Stem area-specific conductivity [Ks] (kg s-1 MPa m-1)","0.308565782830426","0.308870181530255"
-"Step 1","Pressure sensors validation (1/1000 maximum variation)","OK","OK"
-"Step 2","Validation for optimal PEEK tubing choice","OK","OK"
-"","Time (min 300 sec.)","","OK"
-"","Stability (CV < 0.05)","","OK"
