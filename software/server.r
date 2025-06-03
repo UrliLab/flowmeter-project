@@ -223,7 +223,7 @@ server <- function(input, output, session) {
       pente.2 <- model.2$coefficients[2]
       summary(model.2)$adj.r.squared
       
-      K_25=pente.2/(0.88862*(10^((1.3272*(20-Temperature)-0.001053*(20-Temperature)^2)/(Temperature+105))))
+      K_25=pente.2/(0.88862*(1/10^((1.3272*(20-Temperature)-0.001053*(20-Temperature)^2)/(Temperature+105))))
       dfresults$K_25=K_25[[1]]
       
       annotations2 <- data.frame(
