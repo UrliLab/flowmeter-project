@@ -16,7 +16,7 @@ if (file.exists("OUTPUTS/PEEK/measurement")) {} else {dir.create("OUTPUTS/PEEK/m
 
 #start of the application
 server <- function(input, output, session) {
-  
+Pithdiameter=0  
 ############################################################
 ############################################################
 #STEP 1 PEEK tubing calibration
@@ -214,7 +214,17 @@ server <- function(input, output, session) {
       Temperature <- mean(dfPEEK$dfPEEK_chg$TempPEEK, na.rm = TRUE)
       print(Temperature)
       R=1/slopeP
-      R_25=0.88862/(10^((1.3272*(20-Temperature)-0.001053*(20-Temperature)^2)/(Temperature+105)))*R
+#####      
+      #R_25=0.88862/(10^((1.3272*(20-Temperature)-0.001053*(20-Temperature)^2)/(Temperature+105)))*R
+      
+      if (Temperature >= 20) {
+       R_25 <- (0.88862 * (1 / 10^((1.3272 * (20 - Temperature) - 
+                                                 0.001053 * (Temperature - 20)^2) / (Temperature + 105))))*R
+      } else {
+       R_25 <- (0.8904 * (1 / 10^((1301 / (998.333 + 8.1855 * (Temperature - 20) + 
+                                                          0.00585 * (Temperature - 20)^2)) - 1.3022)))*R
+      }
+      
       dfresults$R_25=R_25[[1]]
       
       # Calcul de la conductance hydraulique du PEEK tubing 
@@ -222,8 +232,14 @@ server <- function(input, output, session) {
       model.2 <- lm(FLUX_KGS~PRESSURE_MPA, dfPEEK$dfPEEK_chg)
       pente.2 <- model.2$coefficients[2]
       summary(model.2)$adj.r.squared
+
+      if (Temperature >= 20) {
+       #K_25 <- pente.2 / (0.88862 * (1 / 10^((1.3272 * (20 - Temperature) - 0.001053 * (20 - Temperature)^2) / (Temperature + 105))))
+       K_25 <- pente.2 / (0.88862 * (1 / 10^((1.3272 * (20 - Temperature) - 0.001053 * (Temperature - 20)^2) / (Temperature + 105))))
+      } else {
+       K_25 <- pente.2 / (0.8904 * (1 / 10^((1301 / (998.333 + 8.1855 * (Temperature - 20) + 0.00585 * (Temperature - 20)^2)) - 1.3022)))
+      }
       
-      K_25=pente.2/(0.88862*(1/10^((1.3272*(20-Temperature)-0.001053*(20-Temperature)^2)/(Temperature+105))))
       dfresults$K_25=K_25[[1]]
       
       annotations2 <- data.frame(
@@ -664,8 +680,10 @@ write.csv(data_coeff, paste0("OUTPUTS/SINGLE/",input$parm1,"/",input$parm8,"/",i
 
 folderPTm<-substr(as.character(input$folderPTm)[1],38,1000000L)
 x2<-unlist(gregexpr(pattern ='_PEEK.csv',folderPTm))
+
 namefile2=paste0(substr(folderPTm,1,x2[1]-1))
 print(namefile2)
+
 PEEK_coeff <- read.csv(paste0("www/color/",namefile2,"_PEEK.csv"))
 Res_PEEK<-base::subset(PEEK_coeff,PEEK_tubing_ID==input$PEEK_sel)[[2]]
 PEEK <- data.frame (first_column= c("PEEK tubing ID (from PEEK tubing calibration Tab)", 
@@ -768,6 +786,58 @@ options = list(dom = "ft",ordering=F,
  searching = FALSE),rownames= FALSE)
 }) 
 
+####
+if ((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2 >= 20) {
+ #Resistance
+ calcul1 <- (1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105))
+ #K at measurement
+ calcul2 <- (data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000
+ #Resistance
+ calcul4 <- (1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105))
+  #K at measurement
+ calcul5 <- (data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000
+ 
+ if (data_meanm$t3_mean[3] >= 20) {
+      #K at 25 oC
+     calcul3 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))
+     #K at 25 oC
+     calcul6 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))
+ } else {
+     #K at 25 oC
+     calcul3 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))
+     #K at 25 oC
+     calcul6 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))
+ }
+} else if ((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2 < 20) {
+ #Resistance
+ calcul1 <- (1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022)
+ #K at measurement
+ calcul2 <- (data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000
+ #Resistance
+ calcul4 <- (1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022)
+ #K at measurement
+ calcul5 <- (data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000
+ 
+  if (data_meanm$t3_mean[3] >= 20) {
+      #K at 25 oC
+      calcul3 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))
+      #K at 25 oC
+      calcul6 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))
+  } else {
+      #K at 25 oC
+      calcul3 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))
+      #K at 25 oC
+      calcul6 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))
+  }
+ 
+ }
+
+
+
+
+ 
+ 
+
 result1 <- data.frame (first_column= c("","","Step 1","","","","Step 2","","","","","","Step 3","","","","","","","","","",""),
  second_column = c("",
  "PEEK tubing range",
@@ -807,10 +877,10 @@ data_meanm$k_rough_CV[2],
 data_meanm$p3_min[3],
 data_meanm$t1_mean[3],
 data_meanm$t2_mean[3],(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2,
-(1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)),"",
-data_meanm$t3_mean[3],"",
-(data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000,
-((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))),
+calcul1,
+"",data_meanm$t3_mean[3],"",
+calcul2,
+calcul3),
  
  fourth_column = c("Last 300 s",
  data_meanm$ValidPEEKChoice2[2],"","","","","",
@@ -823,11 +893,11 @@ data_meanm$t3_mean[3],"",
  data_meanm$t1_mean[3],
  data_meanm$t2_mean[3],
  (data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2,
- (1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)),"",
+ calcul4,"",
  data_meanm$t3_mean[3],
  "",
- (data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000,
- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105)))))
+ calcul5,
+ calcul6)
 )
 write.csv(result1, paste0("OUTPUTS/SINGLE/",input$parm1,"/",input$parm8,"/",input$parm1,"_",input$parm2,"_",input$parm3,"_",input$parm4,"_",input$parm5,"_",input$parm6,"_",input$parm7,"_STEP.csv"),row.names=FALSE)
 
@@ -843,8 +913,35 @@ colnames = rep("", ncol(result1)),
 options = list(dom = "ft",ordering=F,
  pageLength = 10000,
  searching = FALSE),rownames= FALSE)
-}) 
+})
 
+
+####
+if ((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2 >= 20) {
+ if (data_meanm$t3_mean[3] >= 20) {
+     calcul7 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)
+     calcul8 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi))
+     calcul9 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)
+     calcul10 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi))
+ } else {
+     calcul7 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))*(input$Stemlength/1000)
+     calcul8 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi))
+     calcul9 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))*(input$Stemlength/1000)
+     calcul10 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi))
+ }
+} else if ((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2 < 20) {
+ if (data_meanm$t3_mean[3] >= 20) {
+    calcul7 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)
+    calcul8 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi))
+    calcul9 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)
+    calcul10 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi))
+ } else {
+    calcul7 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))*(input$Stemlength/1000)
+    calcul8 <- ((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi))
+    calcul9 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))*(input$Stemlength/1000)
+    calcul10 <- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1/0.8904)*Res_PEEK*10^((1301/(998.333+8.1855*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)+0.00585*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2))-1.3022))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.8904*(1/10^((1301/(998.333+8.1855*(data_meanm$t3_mean[3]-20)+0.00585*(data_meanm$t3_mean[3]-20)^2))-1.3022)))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi))
+ }
+}
 
 Pithdiameter=0
 result <- data.frame (first_column= c("Overview", "","","Step 1","Step 2","",""),
@@ -857,15 +954,15 @@ second_column= c(
 "Time (min 300 sec.)",
 "Stability (CV < 0.05)"),
 third_column= c("Total", 
-((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000),
-((data_meanm$P1bar_mean[2]-data_meanm$P2bar_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$P2bar_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi)), 
+calcul7,
+calcul8, 
 base::ifelse((abs(data_meanm$P1bar_mean[1]-data_meanm$P2bar_mean[1])<0.001), "OK", "RECALIBRATE"),
 base::ifelse((data_meanm$ValidPEEKChoice[2]>0.2 & data_meanm$ValidPEEKChoice[2]<0.8), "OK", "?"),
 "",
 ""),
 fourth_column= c("Last 300 s", 
- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000),
- ((data_meanm$p1_300_mean[2]-data_meanm$p2_300_mean[2])/((1.002/0.8904)*Res_PEEK*10^((1.3272*(20-(data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2)-0.001053*((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2-20)^2)/((data_meanm$t1_mean[3]+data_meanm$t2_mean[3])/2+105)))/(data_meanm$p2_300_mean[2]-data_meanm$p3_min[3])*18/1000000)/(0.88862*(1/10^((1.3272*(20-data_meanm$t3_mean[3])-0.001053*(data_meanm$t3_mean[3]-20)^2)/(data_meanm$t3_mean[3]+105))))*(input$Stemlength/1000)/(((((input$Stemdiameter1+input$Stemdiameter2)/2/1000)/2)^2*pi-((Pithdiameter/1000)/2)^2*pi)), 
+ calcul9,
+ calcul10, 
  base::ifelse((abs(data_meanm$P1bar_mean[1]-data_meanm$P2bar_mean[1])<0.001), "OK", "RECALIBRATE"),
  base::ifelse((data_meanm$ValidPEEKChoice2[2]>0.2 & data_meanm$ValidPEEKChoice2[2]<0.8), "OK", "?"),
  base::ifelse(data_meanm$ELTime2_max[2]<294,"WAIT","OK"),
