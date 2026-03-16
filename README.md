@@ -13,7 +13,7 @@
 
 This repository provides detailed information on the firmware and software (R Shiny application) required to assemble the electronic box of a pressure-drop flowmeter, adapted from Sack et al. (2011). The flowmeter can be used to measure flow rates based on the pressure drop within a system, and subsequently determine the hydraulic conductivity of various organs (e.g., stem, leaf, or root). Our software is designed for stems but can be modified to accommodate other organs.
 
-Please note that this repository **does not include** the protocol for using the flowmeter or the R Shiny application. These protocols are **currently under submission** to the Prometheus Protocols website ([https://prometheusprotocols.net/](https://prometheusprotocols.net/)).
+Please note that this repository **does not include** the protocol for using the flowmeter or the R Shiny application. These protocols are **currently under submission** to the Prometheus Protocols website ([Protocole Prometheus](https://wp.me/P9rDtN-15s)).
 
 ## Installation
 
